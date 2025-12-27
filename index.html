@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PerfumeCloud Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { primary: '#0f172a', accent: '#3b82f6' } } } }
+    </script>
+    <style type="text/tailwindcss">
+        @layer components {
+            body { @apply text-slate-600 bg-[#f8fafc] antialiased; font-family: 'Inter', sans-serif; }
+            .card { @apply bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all; }
+            .input-soft { @apply w-full bg-gray-50 border-none rounded-2xl py-4 px-5 text-gray-700 font-semibold focus:ring-2 focus:ring-blue-100 transition-all text-center outline-none; }
+            .btn-primary { @apply bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2; }
+            .sidebar-item { @apply flex items-center gap-3 px-6 py-4 rounded-xl text-sm font-semibold transition-all w-full mb-1; }
+            .badge-insp { @apply px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-bold uppercase tracking-tighter; }
+            .btn-page { @apply w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-all border border-gray-200 hover:bg-gray-50 disabled:opacity-30; }
+        }
+    </style>
+</head>
+<body class="h-screen overflow-hidden">
+    <div id="app" class="flex h-full">
+        <aside v-show="!isMobile || menuAberto" class="w-72 bg-white border-r border-gray-100 flex flex-col shadow-xl z-30">
+            <div class="p-10 font-bold text-primary text-xl flex items-center gap-3">
+                <div class="w-10 h-10 bg-accent rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fa-solid fa-cloud"></i></div>
+                PerfumeCloud
+            </div>
+            <nav class="flex-1 px-4">
+                <button @click="navegar('dashboard')" :class="telaAtual === 'dashboard' ? 'bg-blue-50 text-accent' : 'text-gray-400'" class="sidebar-item"><i class="fa-solid fa-chart-pie"></i> Dashboard</button>
+                <button @click="navegar('vender')" :class="telaAtual === 'vender' ? 'bg-blue-50 text-accent' : 'text-gray-400'" class="sidebar-item"><i class="fa-solid fa-cash-register"></i> Vender</button>
+                <button @click="navegar('produtos')" :class="telaAtual === 'produtos' ? 'bg-blue-50 text-accent' : 'text-gray-400'" class="sidebar-item"><i class="fa-solid fa-list"></i> Estoque</button>
+                <button @click="navegar('historico')" :class="telaAtual === 'historico' ? 'bg-blue-50 text-accent' : 'text-gray-400'" class="sidebar-item"><i class="fa-solid fa-clock-rotate-left"></i> Histórico</button>
+            </nav>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-6 lg:p-12 relative bg-[#f8fafc]">
+            <div v-if="loading" class="fixed top-8 right-8 bg-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 text-xs font-bold border border-gray-100 animate-pulse text-accent">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> SINCRONIZANDO
+            </div>
+
+            <div v-show="telaAtual === 'dashboard'" class="animate-fade-in space-y-10 max-w-6xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                    <div class="card"><p class="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mb-2">Lucro Total</p><p class="text-4xl font-bold text-primary tracking-tighter">{{ formatarMoeda(kpis.lucro) }}</p></div>
+                    <div class="card"><p class="text-[10px] text-accent font-bold uppercase tracking-widest mb-2">Faturamento</p><p class="text-4xl font-bold text-primary tracking-tighter">{{ formatarMoeda(kpis.faturamento) }}</p></div>
+                    <div class="card"><p class="text-[10px] text-purple-600 font-bold uppercase tracking-widest mb-2">Vendas</p><p class="text-4xl font-bold text-primary tracking-tighter">{{ kpis.qtdVendas }}</p></div>
+                </div>
+                <div class="card flex flex-col md:flex-row items-center gap-16">
+                    <div class="w-72 h-72 shrink-0"><canvas id="pieChart"></canvas></div>
+                    <div class="flex-1 w-full space-y-4">
+                        <h3 class="font-bold text-primary text-lg mb-6">Top Produtos (Lucro)</h3>
+                        <div v-for="(item, idx) in dashboardData.topProdutos" class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div class="flex items-center gap-4"><div class="w-3 h-3 rounded-full" :style="{backgroundColor: dashboardData.cores[idx]}"></div><span class="font-semibold text-slate-700">{{ item.nome }}</span></div>
+                            <span class="font-bold text-primary">{{ formatarMoeda(item.valor) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-show="telaAtual === 'vender'" class="animate-fade-in flex flex-col items-center justify-center min-h-[80vh]">
+                <div class="w-full max-w-lg card !rounded-[3rem] shadow-2xl space-y-8">
+                    <h2 class="text-3xl font-bold text-primary text-center tracking-tighter">Venda Rápida</h2>
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4">Produto</label>
+                            <select v-model="vendaInput.produtoId" class="input-soft !text-left" @change="aplicarPrecoSugerido">
+                                <option value="" disabled>Selecione...</option>
+                                <option v-for="p in produtos" :key="p.id" :value="p.id">{{ p.nome }}</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-bold text-orange-400 uppercase tracking-widest ml-4">Pedido ML</label>
+                                <input v-model="vendaInput.mlOrderId" type="text" placeholder="ID Pedido" class="input-soft !py-3 !text-left bg-orange-50/30">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-bold text-blue-500 uppercase tracking-widest ml-4">Rastreio</label>
+                                <input v-model="vendaInput.trackingCode" type="text" placeholder="CÓDIGO" class="input-soft !py-3 !text-left bg-blue-50/30 uppercase">
+                            </div>
+                        </div>
+                        <div class="text-center space-y-2 py-4">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Valor Total</label>
+                            <div class="flex items-center justify-center gap-2 text-primary font-bold">
+                                <span class="text-4xl italic">R$</span>
+                                <input v-model.number="vendaInput.precoVenda" type="number" class="text-6xl bg-transparent w-64 text-center outline-none tracking-tighter">
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center space-y-4">
+                            <div class="flex items-center gap-6 bg-slate-50 p-2 rounded-2xl border border-slate-100">
+                                <button @click="alterarQuantidade(-1)" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm hover:bg-red-50 text-2xl font-bold">-</button>
+                                <span class="text-3xl font-bold w-12 text-center text-primary">{{ vendaInput.quantidade }}</span>
+                                <button @click="alterarQuantidade(1)" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm hover:bg-blue-50 text-2xl font-bold">+</button>
+                            </div>
+                        </div>
+                        <button @click="confirmarVenda" class="btn-primary w-full py-5 text-xl">Confirmar Venda</button>
+                    </div>
+                </div>
+            </div>
+
+            <div v-show="telaAtual === 'produtos'" class="animate-fade-in space-y-8 max-w-6xl mx-auto">
+                <div class="flex justify-between items-center px-4">
+                    <h2 class="text-3xl font-bold text-primary tracking-tighter">Estoque</h2>
+                    <button @click="modalAberto = true" class="btn-primary !py-3 !px-5 text-xs">NOVO PERFUME</button>
+                </div>
+                <div class="px-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input v-model="filtrosEstoque.termo" type="text" placeholder="Nome ou Inspiração..." class="input-soft !text-left !px-6" @input="currentPage = 1">
+                    <input v-model.number="filtrosEstoque.precoMax" type="number" placeholder="Preço custo máximo..." class="input-soft !text-left !px-6" @input="currentPage = 1">
+                </div>
+                <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden text-primary">
+                    <table class="w-full text-left font-semibold">
+                        <thead class="bg-gray-50 text-[10px] font-bold uppercase text-gray-400 tracking-widest border-b">
+                            <tr><th class="py-5 px-6">Produto</th><th class="py-5 px-6 text-center">Inspiração</th><th class="py-5 px-6 text-right">Custo</th><th class="py-5 px-6 text-right text-orange-600">Sugerido ML</th><th class="py-5 px-6 text-center">Ações</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            <tr v-for="p in produtosPaginados" :key="p.id" class="hover:bg-slate-50">
+                                <td class="py-5 px-6">{{ p.nome }}</td>
+                                <td class="py-5 px-6 text-center"><span v-if="p.inspiracao" class="badge-insp">{{ p.inspiracao }}</span></td>
+                                <td class="py-5 px-6 text-right">{{ formatarMoeda(p.custo) }}</td>
+                                <td class="py-5 px-6 text-right text-orange-600 font-bold">{{ formatarMoeda(p.preco_suger_ml) }}</td>
+                                <td class="py-5 px-6 text-center"><button @click="abrirModalEdicao(p)" class="text-accent text-lg"><i class="fa-solid fa-pen-to-square"></i></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div v-if="totalPages > 1" class="p-6 border-t border-gray-100 bg-gray-50/30 flex items-center justify-between">
+                        <div class="text-xs font-bold text-gray-400 uppercase">Mostrando {{ itemsRange }} de {{ produtosFiltrados.length }}</div>
+                        <div class="flex items-center gap-2">
+                            <button @click="mudarPagina(-1)" :disabled="currentPage === 1" class="btn-page text-primary disabled:text-gray-200"><i class="fa-solid fa-chevron-left"></i></button>
+                            <span class="text-sm font-bold px-4 text-primary">{{ currentPage }} / {{ totalPages }}</span>
+                            <button @click="mudarPagina(1)" :disabled="currentPage === totalPages" class="btn-page text-primary disabled:text-gray-200"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-show="telaAtual === 'historico'" class="animate-fade-in space-y-8 max-w-6xl mx-auto">
+                <h2 class="text-3xl font-bold text-primary tracking-tighter px-4">Histórico</h2>
+                <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden text-primary">
+                    <table class="w-full text-left font-semibold">
+                        <thead class="bg-gray-50 text-[10px] font-bold uppercase text-gray-400 tracking-widest border-b">
+                            <tr><th class="py-5 px-6">Data</th><th class="py-5 px-6">Produto</th><th class="py-5 px-6 text-right">Lucro</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            <tr v-for="v in vendas" :key="v.id"><td class="py-5 px-6 text-xs text-gray-400">{{ new Date(v.created_at).toLocaleDateString() }}</td><td class="py-5 px-6">{{ v.nome_produto_snapshot }}</td><td class="py-5 px-6 text-right text-emerald-600">{{ formatarMoeda(v.lucro_liquido) }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <transition name="fade">
+            <div v-if="feedback.aberto" class="fixed inset-0 z-[100] bg-primary/40 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-white rounded-[2.5rem] p-8 max-w-xs w-full text-center shadow-2xl animate-scale">
+                    <div class="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-check"></i></div>
+                    <h4 class="text-xl font-bold mb-2 text-primary">{{ feedback.titulo }}</h4>
+                    <p class="text-gray-500 text-sm mb-6">{{ feedback.mensagem }}</p>
+                    <button @click="feedback.aberto = false" class="btn-primary w-full py-3 text-sm">ENTENDIDO</button>
+                </div>
+            </div>
+        </transition>
+
+        <transition name="fade">
+            <div v-if="modalAberto" class="fixed inset-0 z-[100] bg-primary/40 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl">
+                    <h3 class="text-2xl font-bold text-primary mb-6 text-center">{{ novoProduto.id ? 'Editar' : 'Novo' }} Perfume</h3>
+                    <div class="space-y-4">
+                        <input v-model="novoProduto.nome" type="text" placeholder="Nome" class="input-soft !text-left">
+                        <input v-model="novoProduto.inspiracao" type="text" placeholder="Inspiração" class="input-soft !text-left">
+                        <div class="grid grid-cols-2 gap-4">
+                            <input v-model.number="novoProduto.custo" type="number" placeholder="Custo" class="input-soft !text-left">
+                            <input v-model.number="novoProduto.preco_suger_ml" type="number" placeholder="Venda ML" class="input-soft !text-left">
+                        </div>
+                    </div>
+                    <div class="flex gap-4 mt-8">
+                        <button @click="modalAberto = false" class="flex-1 font-bold text-gray-400 uppercase">Sair</button>
+                        <button @click="salvarProduto" class="flex-1 btn-primary text-xs uppercase">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+    </div>
+    <script type="module" src="./assets/js/app.js"></script>
+</body>
+</html>
