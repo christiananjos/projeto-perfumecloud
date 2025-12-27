@@ -11,7 +11,7 @@ const EstoqueView = {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
             <div class="relative">
                 <i class="fa-solid fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                <input v-model="filtros.busca" type="text" placeholder="Nome do perfume..." class="input-soft !pl-12 !text-left">
+                <input v-model="filtros.busca" type="text" placeholder="Nome ou inspiração..." class="input-soft !pl-12 !text-left">
             </div>
             <div class="relative">
                 <i class="fa-solid fa-filter absolute left-5 top-1/2 -translate-y-1/2 text-orange-400"></i>
@@ -24,6 +24,7 @@ const EstoqueView = {
                 <thead class="bg-gray-50 text-[10px] font-bold uppercase text-gray-400 border-b">
                     <tr>
                         <th class="py-5 px-6">Produto</th>
+                        <th class="py-5 px-6">Inspiração</th>
                         <th class="py-5 px-6 text-right">Custo Unit.</th>
                         <th class="py-5 px-6 text-right text-orange-600">Sugerido ML</th>
                         <th class="py-5 px-6 text-center">Ações</th>
@@ -32,6 +33,12 @@ const EstoqueView = {
                 <tbody class="divide-y divide-gray-50">
                     <tr v-for="p in produtosFiltrados" :key="p.id" class="hover:bg-slate-50 transition-colors">
                         <td class="py-5 px-6 text-slate-700 font-bold">{{ p.nome }}</td>
+                        <td class="py-5 px-6">
+                            <span v-if="p.inspiracao" class="bg-slate-100 text-slate-500 text-[10px] px-3 py-1 rounded-full uppercase font-bold">
+                                {{ p.inspiracao }}
+                            </span>
+                            <span v-else class="text-gray-300 italic text-xs">---</span>
+                        </td>
                         <td class="py-5 px-6 text-right text-slate-400">R$ {{ Number(p.custo).toFixed(2) }}</td>
                         <td class="py-5 px-6 text-right text-orange-600 font-bold">R$ {{ Number(p.preco_suger_ml).toFixed(2) }}</td>
                         <td class="py-5 px-6 text-center space-x-3">
@@ -47,10 +54,7 @@ const EstoqueView = {
             </table>
 
             <div v-if="produtosFiltrados.length === 0" class="p-20 text-center">
-                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                    <i class="fa-solid fa-box-open text-2xl"></i>
-                </div>
-                <p class="text-gray-400 italic font-medium">Nenhum perfume corresponde aos filtros.</p>
+                <p class="text-gray-400 italic">Nenhum perfume encontrado.</p>
             </div>
         </div>
 
@@ -63,7 +67,12 @@ const EstoqueView = {
                 <div class="space-y-4">
                     <div class="space-y-1">
                         <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Nome do Produto</label>
-                        <input v-model="form.nome" type="text" class="input-soft">
+                        <input v-model="form.nome" type="text" placeholder="Ex: Invictus Platinum" class="input-soft">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Inspiração (Opcional)</label>
+                        <input v-model="form.inspiracao" type="text" placeholder="Ex: Paco Rabanne" class="input-soft">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -94,11 +103,10 @@ const EstoqueView = {
             modal: { aberto: false },
             modoEdicao: false,
             idSendoEditado: null,
-            form: { nome: '', custo: 0, preco_suger_ml: 0 }
+            form: { nome: '', inspiracao: '', custo: 0, preco_suger_ml: 0 }
         }
     },
     watch: {
-        // Cálculo automático: Custo + 30% lucro + 60 fixo (Taxa ML/Logística)
         'form.custo'(v) {
             if(!this.modoEdicao && v > 0) {
                 this.form.preco_suger_ml = parseFloat((v * 1.30 + 60).toFixed(2));
@@ -109,7 +117,9 @@ const EstoqueView = {
         produtosFiltrados() {
             if (!this.produtos || !Array.isArray(this.produtos)) return [];
             return this.produtos.filter(p => {
-                const matchBusca = p.nome.toLowerCase().includes(this.filtros.busca.toLowerCase());
+                const termo = this.filtros.busca.toLowerCase();
+                const matchBusca = p.nome.toLowerCase().includes(termo) || 
+                                  (p.inspiracao && p.inspiracao.toLowerCase().includes(termo));
                 const matchPreco = !this.filtros.precoMax || p.preco_suger_ml <= this.filtros.precoMax;
                 return matchBusca && matchPreco;
             });
@@ -119,53 +129,36 @@ const EstoqueView = {
         abrirModalCadastro() {
             this.modoEdicao = false;
             this.idSendoEditado = null;
-            this.form = { nome: '', custo: 0, preco_suger_ml: 0 };
+            this.form = { nome: '', inspiracao: '', custo: 0, preco_suger_ml: 0 };
             this.modal.aberto = true;
         },
         editar(p) {
             this.modoEdicao = true;
             this.idSendoEditado = p.id;
-            this.form = { ...p }; // Copia os dados para o formulário
+            this.form = { ...p };
             this.modal.aberto = true;
         },
-        fecharModal() {
-            this.modal.aberto = false;
-        },
+        fecharModal() { this.modal.aberto = false; },
         async salvar() {
             if(!this.form.nome) return alert("O nome é obrigatório.");
-
             try {
                 if (this.modoEdicao) {
-                    // Lógica de Atualização
-                    const { error } = await window.supabase
-                        .from('produtos')
-                        .update(this.form)
-                        .eq('id', this.idSendoEditado);
+                    const { error } = await window.supabase.from('produtos').update(this.form).eq('id', this.idSendoEditado);
                     if (error) throw error;
                 } else {
-                    // Lógica de Novo Cadastro
-                    const { error } = await window.supabase
-                        .from('produtos')
-                        .insert([this.form]);
+                    const { error } = await window.supabase.from('produtos').insert([this.form]);
                     if (error) throw error;
                 }
-
                 this.fecharModal();
                 this.$emit('refresh');
-                this.$emit('notificar', { 
-                    titulo: 'Sucesso!', 
-                    texto: this.modoEdicao ? 'Perfume atualizado.' : 'Novo perfume cadastrado.' 
-                });
+                this.$emit('notificar', { titulo: 'Sucesso!', texto: 'Dados salvos no estoque.' });
             } catch (e) {
-                alert("Erro ao salvar dados: " + e.message);
+                alert("Erro ao salvar: " + e.message);
             }
         },
         async excluir(id) {
-            if (confirm("Deseja realmente remover este perfume do estoque?")) {
-                const { error } = await window.supabase
-                    .from('produtos')
-                    .delete()
-                    .eq('id', id);
+            if (confirm("Remover este perfume?")) {
+                const { error } = await window.supabase.from('produtos').delete().eq('id', id);
                 if (!error) this.$emit('refresh');
             }
         }

@@ -82,13 +82,13 @@ const app = createApp({
         }
     },
     async mounted() {
-        window.app = this; 
-        const { data: { session } } = await window.supabase.auth.getSession();
-        
-        // Mesmo sem sessão (se as suas tabelas forem públicas), vamos carregar
-        this.session = session; 
-        this.carregarDados();
-    }
+    window.app = this; 
+    const { data: { session } } = await window.supabase.auth.getSession();
+    this.session = session; 
+
+    // O segredo está aqui: carregar os dados IMEDIATAMENTE ao abrir
+    await this.carregarDados();
+}
 });
 
 app.mount('#app');
