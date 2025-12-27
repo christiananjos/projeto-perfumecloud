@@ -14,6 +14,9 @@ export const db = {
     async registrarVenda(venda) {
         return await _supabase.from('vendas').insert([venda]);
     },
+    async deletarVenda(id) {
+        return await _supabase.from('vendas').delete().eq('id', id);
+    },
     async salvarProduto(produto) {
         if (produto.id) return await _supabase.from('produtos').update(produto).eq('id', produto.id);
         const { id, ...dados } = produto;

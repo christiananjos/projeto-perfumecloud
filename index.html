@@ -22,7 +22,8 @@
             .sidebar-item { @apply flex items-center gap-3 px-6 py-4 rounded-xl text-sm font-semibold transition-all w-full mb-1; }
             .badge-correios { @apply text-[9px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100 flex items-center gap-1 hover:bg-blue-600 hover:text-white transition-all cursor-pointer; }
             .status-text { @apply text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100 mt-1 inline-flex items-center gap-1 uppercase; }
-            .btn-page { @apply w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-all border border-gray-200 hover:bg-gray-50 disabled:opacity-30; }
+            .badge-ml { @apply text-[9px] uppercase font-bold px-2 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-100; }
+            .btn-page { @apply w-10 h-10 rounded-xl flex items-center justify-center font-bold border border-gray-200 hover:bg-gray-50 disabled:opacity-30; }
         }
     </style>
 </head>
@@ -73,19 +74,19 @@
                             <input v-model="vendaInput.trackingCode" type="text" placeholder="Correios" class="input-soft !py-3 bg-blue-50/30 uppercase">
                         </div>
                         <div class="text-center py-4">
-                            <div class="flex items-center justify-center gap-2 font-bold">
+                            <div class="flex items-center justify-center gap-2 font-bold text-primary">
                                 <span class="text-4xl italic">R$</span>
                                 <input v-model.number="vendaInput.precoVenda" type="number" class="text-6xl bg-transparent w-64 text-center outline-none tracking-tighter">
                             </div>
                         </div>
                         <div class="flex flex-col items-center gap-4">
                             <div class="flex items-center gap-6 bg-slate-50 p-2 rounded-2xl border border-slate-100">
-                                <button @click="alterarQuantidade(-1)" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm hover:bg-red-50 text-2xl font-bold border border-gray-100">-</button>
+                                <button @click="alterarQuantidade(-1)" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm hover:bg-red-50 text-2xl font-bold border border-gray-100 transition-colors">-</button>
                                 <span class="text-3xl font-bold w-12 text-center">{{ vendaInput.quantidade }}</span>
-                                <button @click="alterarQuantidade(1)" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm hover:bg-blue-50 text-2xl font-bold border border-gray-100">+</button>
+                                <button @click="alterarQuantidade(1)" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm hover:bg-blue-50 text-2xl font-bold border border-gray-100 transition-colors">+</button>
                             </div>
                         </div>
-                        <button @click="confirmarVenda" class="btn-primary w-full py-5 text-xl">Confirmar Venda</button>
+                        <button @click="confirmarVenda" class="btn-primary w-full py-5 text-xl uppercase tracking-tighter shadow-blue-500/30">Confirmar Venda</button>
                     </div>
                 </div>
             </div>
@@ -99,7 +100,7 @@
                     <input v-model="filtrosEstoque.termo" type="text" placeholder="Buscar..." class="input-soft !text-left !px-6" @input="currentPage = 1">
                     <input v-model.number="filtrosEstoque.precoMax" type="number" placeholder="Até R$..." class="input-soft !text-left !px-6" @input="currentPage = 1">
                 </div>
-                <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden text-primary">
                     <table class="w-full text-left font-semibold text-sm">
                         <thead class="bg-gray-50 text-[10px] font-bold uppercase text-gray-400 tracking-widest border-b">
                             <tr>
@@ -118,47 +119,51 @@
                                 <td class="py-5 px-6 text-right text-orange-600 font-bold">{{ formatarMoeda(p.preco_suger_ml) }}</td>
                                 <td class="py-5 px-6 text-center">
                                     <div class="flex justify-center gap-4 text-lg">
-                                        <button @click="abrirModalEdicao(p)" class="text-accent"><i class="fa-solid fa-pen-to-square"></i></button>
-                                        <button @click="confirmarExcluirProduto(p.id)" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+                                        <button @click="abrirModalEdicao(p)" class="text-accent hover:scale-110 transition-all"><i class="fa-solid fa-pen-to-square"></i></button>
+                                        <button @click="confirmarExcluirProduto(p.id)" class="text-red-400 hover:scale-110 transition-all"><i class="fa-solid fa-trash-can"></i></button>
                                     </div>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
-                    <div v-if="totalPages > 1" class="p-6 border-t border-gray-100 flex items-center justify-between">
-                        <span class="text-xs font-bold text-gray-400">Mostrando {{ itemsRange }}</span>
-                        <div class="flex gap-2">
-                            <button @click="mudarPagina(-1)" :disabled="currentPage === 1" class="btn-page"><i class="fa-solid fa-chevron-left"></i></button>
-                            <span class="text-sm font-bold px-4 text-primary self-center">{{ currentPage }} / {{ totalPages }}</span>
-                            <button @click="mudarPagina(1)" :disabled="currentPage === totalPages" class="btn-page"><i class="fa-solid fa-chevron-right"></i></button>
-                        </div>
-                    </div>
                 </div>
             </div>
 
             <div v-show="telaAtual === 'historico'" class="space-y-8 max-w-6xl mx-auto">
                 <div class="flex justify-between items-center px-4">
                     <h2 class="text-3xl font-bold tracking-tighter">Histórico</h2>
-                    <button @click="sincronizarStatusCorreios" class="text-accent text-sm font-bold flex items-center gap-2">
+                    <button @click="sincronizarStatusCorreios" class="text-accent text-sm font-bold flex items-center gap-2 hover:underline">
                         <i class="fa-solid fa-sync" :class="{'fa-spin': loading}"></i> Sincronizar Correios
                     </button>
                 </div>
-                <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden text-primary">
                     <table class="w-full text-left font-semibold text-sm">
                         <thead class="bg-gray-50 text-[10px] font-bold uppercase text-gray-400 border-b">
-                            <tr><th class="py-5 px-6">Data</th><th class="py-5 px-6">Produto</th><th class="py-5 px-6">Rastreio / Status</th><th class="py-5 px-6 text-right">Lucro</th></tr>
+                            <tr>
+                                <th class="py-5 px-6">Data</th>
+                                <th class="py-5 px-6">Produto</th>
+                                <th class="py-5 px-6">Pedido ML / Status Correios</th>
+                                <th class="py-5 px-6 text-right">Lucro</th>
+                                <th class="py-5 px-6 text-center">Ação</th>
+                            </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
-                            <tr v-for="v in vendas" :key="v.id" class="hover:bg-slate-50">
+                            <tr v-for="v in vendas" :key="v.id" class="hover:bg-slate-50 transition-colors">
                                 <td class="py-5 px-6 text-xs text-gray-400">{{ new Date(v.created_at).toLocaleDateString() }}</td>
                                 <td class="py-5 px-6">{{ v.nome_produto_snapshot }}</td>
                                 <td class="py-5 px-6">
                                     <div class="flex flex-col gap-1">
-                                        <button v-if="v.tracking_code" @click="abrirRastreio(v.tracking_code)" class="badge-correios w-max">📦 {{ v.tracking_code }}</button>
-                                        <div v-if="v.tracking_status" class="status-text"><i class="fa-solid fa-truck-fast"></i> {{ v.tracking_status }}</div>
+                                        <span v-if="v.ml_order_id" class="badge-ml w-max">#{{ v.ml_order_id }}</span>
+                                        <div v-if="v.tracking_status" class="status-text lowercase">
+                                            <i class="fa-solid fa-truck-fast"></i> {{ v.tracking_status }}
+                                        </div>
+                                        <button v-if="v.tracking_code && !v.tracking_status" @click="abrirRastreio(v.tracking_code)" class="badge-correios w-max">📦 {{ v.tracking_code }}</button>
                                     </div>
                                 </td>
                                 <td class="py-5 px-6 text-right text-emerald-600 font-bold">{{ formatarMoeda(v.lucro_liquido) }}</td>
+                                <td class="py-5 px-6 text-center">
+                                    <button @click="confirmarExcluirVenda(v.id)" class="text-red-400 hover:scale-110 transition-all"><i class="fa-solid fa-trash-can"></i></button>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -167,28 +172,29 @@
         </main>
 
         <div v-if="feedback.aberto" class="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="bg-white rounded-[2.5rem] p-8 max-w-xs w-full text-center shadow-2xl">
+            <div class="bg-white rounded-[2.5rem] p-8 max-w-xs w-full text-center shadow-2xl animate-scale">
                 <div class="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-check"></i></div>
-                <h4 class="text-xl font-bold mb-2">{{ feedback.titulo }}</h4>
+                <h4 class="text-xl font-bold mb-2 text-primary">{{ feedback.titulo }}</h4>
                 <p class="text-gray-500 text-sm mb-6">{{ feedback.mensagem }}</p>
-                <button @click="feedback.aberto = false" class="btn-primary w-full py-3">OK</button>
+                <button @click="feedback.aberto = false" class="btn-primary w-full py-3 text-sm">OK</button>
             </div>
         </div>
 
         <div v-if="confirmDialog.aberto" class="fixed inset-0 z-[110] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white rounded-[2.5rem] p-8 max-w-xs w-full text-center shadow-2xl">
                 <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                <h4 class="text-xl font-bold mb-2">Eliminar?</h4>
+                <h4 class="text-xl font-bold mb-2 text-primary uppercase tracking-tighter">Eliminar?</h4>
+                <p class="text-gray-500 text-sm mb-8 italic">Ação irreversível.</p>
                 <div class="flex gap-3">
                     <button @click="confirmDialog.aberto = false" class="flex-1 font-bold text-gray-400">Não</button>
-                    <button @click="confirmDialog.acaoConfirmada" class="flex-1 bg-red-500 text-white rounded-xl py-3 font-bold">Sim</button>
+                    <button @click="confirmDialog.acaoConfirmada" class="flex-1 bg-red-500 text-white rounded-xl py-3 font-bold uppercase text-[10px]">Sim</button>
                 </div>
             </div>
         </div>
 
         <div v-if="modalAberto" class="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl">
-                <h3 class="text-2xl font-bold mb-6 text-center">{{ novoProduto.id ? 'Editar' : 'Novo' }}</h3>
+                <h3 class="text-2xl font-bold mb-6 text-center uppercase tracking-tighter">{{ novoProduto.id ? 'Editar' : 'Novo' }} Perfume</h3>
                 <div class="space-y-4">
                     <input v-model="novoProduto.nome" type="text" placeholder="Nome" class="input-soft !text-left">
                     <input v-model="novoProduto.inspiracao" type="text" placeholder="Inspiração" class="input-soft !text-left">
@@ -199,7 +205,7 @@
                 </div>
                 <div class="flex gap-4 mt-8">
                     <button @click="modalAberto = false" class="flex-1 font-bold text-gray-400">Sair</button>
-                    <button @click="salvarProduto" class="flex-1 btn-primary text-xs">Salvar</button>
+                    <button @click="salvarProduto" class="flex-1 btn-primary text-xs uppercase">Salvar</button>
                 </div>
             </div>
         </div>
