@@ -11,7 +11,7 @@ createApp({
             produtos: [], vendas: [],
             vendaInput: { produtoId: '', precoVenda: null, quantidade: 1, precoUnitarioBase: 0, mlOrderId: '', trackingCode: '' },
             filtrosEstoque: { termo: '', precoMax: null },
-            currentPage: 1, itemsPerPage: 8,
+            currentPage: 1, itemsPerPage: 10,
             novoProduto: { id: null, nome: '', custo: null, inspiracao: '', preco_suger_ml: null },
             dashboardData: { topProdutos: [], cores: APP_CONFIG.CORES },
             pieChartInstance: null,
@@ -38,6 +38,11 @@ createApp({
             const start = (this.currentPage - 1) * this.itemsPerPage;
             return this.produtosFiltrados.slice(start, start + this.itemsPerPage);
         },
+        itemsRange() {
+            const start = (this.currentPage - 1) * this.itemsPerPage + 1;
+            const end = Math.min(this.currentPage * this.itemsPerPage, this.produtosFiltrados.length);
+            return this.produtosFiltrados.length > 0 ? `${start}-${end}` : '0-0';
+        },
         produtoSelecionado() { return this.produtos.find(p => p.id === this.vendaInput.produtoId); }
     },
     methods: {
@@ -47,6 +52,7 @@ createApp({
             if(this.isMobile) this.menuAberto = false; 
             if(t === 'dashboard') nextTick(() => this.renderizarGrafico());
         },
+        mudarPagina(dir) { if (this.currentPage + dir >= 1 && this.currentPage + dir <= this.totalPages) this.currentPage += dir; },
         async carregarDados() {
             this.loading = true;
             try {
@@ -55,7 +61,6 @@ createApp({
                 if(this.telaAtual === 'dashboard') nextTick(() => this.renderizarGrafico());
             } catch(e) { console.error(e); } finally { this.loading = false; }
         },
-        // AÇÕES DE PRODUTO
         abrirModalNovo() { this.novoProduto = { id: null, nome: '', custo: null, inspiracao: '', preco_suger_ml: null }; this.modalAberto = true; },
         abrirModalEdicao(p) { this.novoProduto = { ...p }; this.modalAberto = true; },
         async salvarProduto() {
@@ -64,25 +69,19 @@ createApp({
                 const { error } = await db.salvarProduto(this.novoProduto);
                 if(error) throw error;
                 this.modalAberto = false; await this.carregarDados();
-                this.feedback = { aberto: true, titulo: 'Sucesso', mensagem: 'Estoque atualizado.' };
+                this.feedback = { aberto: true, titulo: 'Sucesso', mensagem: 'Operação concluída.' };
             } catch(e) { alert(e.message); } finally { this.loading = false; }
         },
         confirmarExcluirProduto(id) {
             this.confirmDialog = {
-                aberto: true,
-                mensagem: 'Remover este perfume permanentemente?',
+                aberto: true, mensagem: 'Remover perfume permanentemente?',
                 acaoConfirmada: async () => {
-                    this.confirmDialog.aberto = false;
-                    this.loading = true;
-                    try {
-                        await db.excluirProduto(id);
-                        await this.carregarDados();
-                        this.feedback = { aberto: true, titulo: 'Removido', mensagem: 'Produto excluído.' };
-                    } catch(e) { alert(e.message); } finally { this.loading = false; }
+                    this.confirmDialog.aberto = false; this.loading = true;
+                    await db.excluirProduto(id); await this.carregarDados();
+                    this.feedback = { aberto: true, titulo: 'Removido', mensagem: 'Produto excluído.' };
                 }
             };
         },
-        // AÇÕES DE VENDA
         aplicarPrecoSugerido() {
             if(this.produtoSelecionado) {
                 this.vendaInput.precoUnitarioBase = this.produtoSelecionado.preco_suger_ml || 0;
@@ -102,7 +101,7 @@ createApp({
                 const qtd = this.vendaInput.quantidade;
                 const total = this.vendaInput.precoVenda;
                 const unitario = total / qtd;
-                const lucro = total - (this.produtoSelecionado.custo * qtd) - (60 * qtd); // Taxa ML fixa 60
+                const lucro = total - (this.produtoSelecionado.custo * qtd) - (60 * qtd);
 
                 const { error } = await db.registrarVenda({
                     produto_id: this.vendaInput.produtoId,
@@ -113,7 +112,7 @@ createApp({
                     lucro_liquido: lucro,
                     ml_order_id: this.vendaInput.mlOrderId,
                     tracking_code: this.vendaInput.trackingCode.toUpperCase(),
-                    tracking_status: 'Pendente'
+                    tracking_status: this.vendaInput.trackingCode ? 'Postado' : ''
                 });
                 if(error) throw error;
                 this.vendaInput = { produtoId: '', precoVenda: null, quantidade: 1, precoUnitarioBase: 0, mlOrderId: '', trackingCode: '' };
