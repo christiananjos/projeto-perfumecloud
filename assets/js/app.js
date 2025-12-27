@@ -20,7 +20,6 @@ createApp({
         }
     },
     watch: {
-        // CÁLCULO AUTOMÁTICO (Margem 30% + Taxa ML)
         'novoProduto.custo'(novoCusto) {
             if (novoCusto > 0 && !this.novoProduto.id) {
                 const taxaML = 60.00;
@@ -39,7 +38,8 @@ createApp({
             return this.produtos.filter(p => {
                 const busca = (this.filtrosEstoque.termo || '').toLowerCase();
                 const termoOk = p.nome.toLowerCase().includes(busca) || (p.inspiracao && p.inspiracao.toLowerCase().includes(busca));
-                const precoOk = !this.filtrosEstoque.precoMax || p.custo <= this.filtrosEstoque.precoMax;
+                // ALTERADO: Agora filtra pelo preço sugerido ML
+                const precoOk = !this.filtrosEstoque.precoMax || p.preco_suger_ml <= this.filtrosEstoque.precoMax;
                 return termoOk && precoOk;
             });
         },
@@ -52,14 +52,12 @@ createApp({
             const start = (this.currentPage - 1) * this.itemsPerPage + 1;
             const end = Math.min(this.currentPage * this.itemsPerPage, this.produtosFiltrados.length);
             return this.produtosFiltrados.length > 0 ? `${start}-${end}` : '0-0';
-        },
-        produtoSelecionado() { return this.produtos.find(p => p.id === this.vendaInput.produtoId); }
+        }
     },
     methods: {
         formatarMoeda(v) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0); },
         navegar(t) { 
             this.telaAtual = t; 
-            if(this.isMobile) this.menuAberto = false; 
             if(t === 'dashboard') nextTick(() => this.renderizarGrafico());
         },
         mudarPagina(dir) { 
@@ -80,10 +78,9 @@ createApp({
         async salvarProduto() {
             this.loading = true;
             try {
-                const { error } = await db.salvarProduto(this.novoProduto);
-                if(error) throw error;
+                await db.salvarProduto(this.novoProduto);
                 this.modalAberto = false; await this.carregarDados();
-                this.feedback = { aberto: true, titulo: 'Sucesso', mensagem: 'Estoque atualizado.' };
+                this.feedback = { aberto: true, titulo: 'Sucesso', mensagem: 'Dados atualizados.' };
             } catch(e) { alert(e.message); } finally { this.loading = false; }
         },
         confirmarExcluirProduto(id) {
@@ -92,7 +89,6 @@ createApp({
                 acaoConfirmada: async () => {
                     this.confirmDialog.aberto = false; this.loading = true;
                     await db.excluirProduto(id); await this.carregarDados();
-                    this.feedback = { aberto: true, titulo: 'Removido', mensagem: 'Produto excluído.' };
                 }
             };
         },
@@ -102,13 +98,13 @@ createApp({
                 acaoConfirmada: async () => {
                     this.confirmDialog.aberto = false; this.loading = true;
                     await db.deletarVenda(id); await this.carregarDados();
-                    this.feedback = { aberto: true, titulo: 'Removido', mensagem: 'Venda excluída.' };
                 }
             };
         },
         aplicarPrecoSugerido() {
-            if(this.produtoSelecionado) {
-                this.vendaInput.precoUnitarioBase = this.produtoSelecionado.preco_suger_ml || 0;
+            const p = this.produtos.find(prod => prod.id === this.vendaInput.produtoId);
+            if(p) {
+                this.vendaInput.precoUnitarioBase = p.preco_suger_ml || 0;
                 this.vendaInput.precoVenda = this.vendaInput.precoUnitarioBase * this.vendaInput.quantidade;
             }
         },
@@ -122,25 +118,23 @@ createApp({
             if (!this.vendaInput.produtoId || !this.vendaInput.precoVenda) return;
             this.loading = true;
             try {
-                const qtd = this.vendaInput.quantidade;
+                const p = this.produtos.find(prod => prod.id === this.vendaInput.produtoId);
                 const total = this.vendaInput.precoVenda;
-                const unitario = total / qtd;
-                const lucro = total - (this.produtoSelecionado.custo * qtd) - (60 * qtd);
-                const { error } = await db.registrarVenda({
+                const lucro = total - (p.custo * this.vendaInput.quantidade) - (60 * this.vendaInput.quantidade);
+                await db.registrarVenda({
                     produto_id: this.vendaInput.produtoId,
-                    nome_produto_snapshot: this.produtoSelecionado.nome,
-                    quantidade: qtd,
-                    preco_venda_unitario: unitario,
+                    nome_produto_snapshot: p.nome,
+                    quantidade: this.vendaInput.quantidade,
+                    preco_venda_unitario: total / this.vendaInput.quantidade,
                     faturamento_total: total,
                     lucro_liquido: lucro,
                     ml_order_id: this.vendaInput.mlOrderId,
                     tracking_code: this.vendaInput.trackingCode.toUpperCase()
                 });
-                if(error) throw error;
                 this.vendaInput = { produtoId: '', precoVenda: null, quantidade: 1, precoUnitarioBase: 0, mlOrderId: '', trackingCode: '' };
                 await this.carregarDados();
                 this.feedback = { aberto: true, titulo: 'Venda Salva!', mensagem: 'Registrado com sucesso.' };
-            } catch(e) { alert("Erro: " + e.message); } finally { this.loading = false; }
+            } catch(e) { alert(e.message); } finally { this.loading = false; }
         },
         renderizarGrafico() {
             const ctx = document.getElementById('pieChart');
