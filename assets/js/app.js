@@ -19,6 +19,16 @@ createApp({
             confirmDialog: { aberto: false, mensagem: '', acaoConfirmada: null }
         }
     },
+    watch: {
+        // CÁLCULO AUTOMÁTICO AO DIGITAR O CUSTO
+        'novoProduto.custo'(novoCusto) {
+            if (novoCusto > 0 && !this.novoProduto.id) { // Só calcula automaticamente para novos produtos
+                const taxaML = APP_CONFIG.NEGOCIO.TAXA_ML;
+                const margemLucro = 1.30; // Exemplo: 30% de margem sobre o custo
+                this.novoProduto.preco_suger_ml = parseFloat((novoCusto * margemLucro + taxaML).toFixed(2));
+            }
+        }
+    },
     computed: {
         kpis() {
             const luc = this.vendas.reduce((a, v) => a + (v.lucro_liquido || 0), 0);
@@ -52,7 +62,10 @@ createApp({
             if(this.isMobile) this.menuAberto = false; 
             if(t === 'dashboard') nextTick(() => this.renderizarGrafico());
         },
-        mudarPagina(dir) { if (this.currentPage + dir >= 1 && this.currentPage + dir <= this.totalPages) this.currentPage += dir; },
+        mudarPagina(dir) { 
+            const novaPag = this.currentPage + dir;
+            if (novaPag >= 1 && novaPag <= this.totalPages) this.currentPage = novaPag;
+        },
         async carregarDados() {
             this.loading = true;
             try {
@@ -89,7 +102,7 @@ createApp({
                 const { error } = await db.salvarProduto(this.novoProduto);
                 if(error) throw error;
                 this.modalAberto = false; await this.carregarDados();
-                this.feedback = { aberto: true, titulo: 'Sucesso', mensagem: 'Dados atualizados.' };
+                this.feedback = { aberto: true, titulo: 'Sucesso', mensagem: 'Produto registrado com preço calculado.' };
             } catch(e) { alert(e.message); } finally { this.loading = false; }
         },
         confirmarExcluirProduto(id) {
@@ -129,15 +142,15 @@ createApp({
             this.loading = true;
             try {
                 const qtd = this.vendaInput.quantidade;
-                const fat = this.vendaInput.precoVenda;
-                const unitario = fat / qtd;
-                const lucro = fat - (this.produtoSelecionado.custo * qtd) - (60 * qtd);
+                const total = this.vendaInput.precoVenda;
+                const unitario = total / qtd;
+                const lucro = total - (this.produtoSelecionado.custo * qtd) - (APP_CONFIG.NEGOCIO.TAXA_ML * qtd);
                 const { error } = await db.registrarVenda({
                     produto_id: this.vendaInput.produtoId,
                     nome_produto_snapshot: this.produtoSelecionado.nome,
                     quantidade: qtd,
                     preco_venda_unitario: unitario,
-                    faturamento_total: fat,
+                    faturamento_total: total,
                     lucro_liquido: lucro,
                     ml_order_id: this.vendaInput.mlOrderId,
                     tracking_code: this.vendaInput.trackingCode.toUpperCase(),
