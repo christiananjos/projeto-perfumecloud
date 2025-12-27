@@ -61,6 +61,28 @@ createApp({
                 if(this.telaAtual === 'dashboard') nextTick(() => this.renderizarGrafico());
             } catch(e) { console.error(e); } finally { this.loading = false; }
         },
+        // --- SINCRONIZAÇÃO DE RASTREIO CORREIOS ---
+        async sincronizarStatusCorreios() {
+            const vendasAtivas = this.vendas.filter(v => v.tracking_code && v.tracking_status !== 'Objeto entregue ao destinatário');
+            if (vendasAtivas.length === 0) return;
+            this.loading = true;
+            for (const venda of vendasAtivas) {
+                try {
+                    const response = await fetch(`https://api.linkrastreio.com.br/rastreio?id=${venda.tracking_code}`);
+                    const data = await response.json();
+                    if (data.eventos && data.eventos.length > 0) {
+                        const statusAtual = data.eventos[0].status;
+                        if (statusAtual !== venda.tracking_status) {
+                            await supabase.from('vendas').update({ tracking_status: statusAtual }).eq('id', venda.id);
+                            venda.tracking_status = statusAtual;
+                        }
+                    }
+                } catch (err) { console.warn("Erro Correios:", venda.tracking_code); }
+            }
+            this.loading = false;
+        },
+        abrirRastreio(codigo) { window.open(`https://api.linkrastreio.com.br/rastreio?id=${codigo}`, '_blank'); },
+        // AÇÕES PRODUTO
         abrirModalNovo() { this.novoProduto = { id: null, nome: '', custo: null, inspiracao: '', preco_suger_ml: null }; this.modalAberto = true; },
         abrirModalEdicao(p) { this.novoProduto = { ...p }; this.modalAberto = true; },
         async salvarProduto() {
@@ -69,7 +91,7 @@ createApp({
                 const { error } = await db.salvarProduto(this.novoProduto);
                 if(error) throw error;
                 this.modalAberto = false; await this.carregarDados();
-                this.feedback = { aberto: true, titulo: 'Sucesso', mensagem: 'Operação concluída.' };
+                this.feedback = { aberto: true, titulo: 'Sucesso', mensagem: 'Dados atualizados.' };
             } catch(e) { alert(e.message); } finally { this.loading = false; }
         },
         confirmarExcluirProduto(id) {
@@ -82,6 +104,7 @@ createApp({
                 }
             };
         },
+        // AÇÕES VENDA
         aplicarPrecoSugerido() {
             if(this.produtoSelecionado) {
                 this.vendaInput.precoUnitarioBase = this.produtoSelecionado.preco_suger_ml || 0;
@@ -99,25 +122,25 @@ createApp({
             this.loading = true;
             try {
                 const qtd = this.vendaInput.quantidade;
-                const total = this.vendaInput.precoVenda;
-                const unitario = total / qtd;
-                const lucro = total - (this.produtoSelecionado.custo * qtd) - (60 * qtd);
-
+                const fat = this.vendaInput.precoVenda;
+                const unitario = fat / qtd;
+                const lucro = fat - (this.produtoSelecionado.custo * qtd) - (60 * qtd);
                 const { error } = await db.registrarVenda({
                     produto_id: this.vendaInput.produtoId,
                     nome_produto_snapshot: this.produtoSelecionado.nome,
                     quantidade: qtd,
                     preco_venda_unitario: unitario,
-                    faturamento_total: total,
+                    faturamento_total: fat,
                     lucro_liquido: lucro,
                     ml_order_id: this.vendaInput.mlOrderId,
                     tracking_code: this.vendaInput.trackingCode.toUpperCase(),
-                    tracking_status: this.vendaInput.trackingCode ? 'Postado' : ''
+                    tracking_status: 'Aguardando Postagem'
                 });
                 if(error) throw error;
                 this.vendaInput = { produtoId: '', precoVenda: null, quantidade: 1, precoUnitarioBase: 0, mlOrderId: '', trackingCode: '' };
                 await this.carregarDados();
-                this.feedback = { aberto: true, titulo: 'Venda Salva!', mensagem: 'Registrado com sucesso.' };
+                this.feedback = { aberto: true, titulo: 'Venda Salva!', mensagem: 'Sincronizando rastreio...' };
+                setTimeout(() => this.sincronizarStatusCorreios(), 2000);
             } catch(e) { alert("Erro: " + e.message); } finally { this.loading = false; }
         },
         renderizarGrafico() {
@@ -135,5 +158,8 @@ createApp({
             });
         }
     },
-    mounted() { this.carregarDados(); }
+    mounted() { 
+        this.carregarDados(); 
+        setTimeout(() => this.sincronizarStatusCorreios(), 4000);
+    }
 }).mount('#app');

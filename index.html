@@ -20,8 +20,9 @@
             .input-soft { @apply w-full bg-gray-50 border-none rounded-2xl py-4 px-5 text-gray-700 font-semibold focus:ring-2 focus:ring-blue-100 transition-all text-center outline-none; }
             .btn-primary { @apply bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2; }
             .sidebar-item { @apply flex items-center gap-3 px-6 py-4 rounded-xl text-sm font-semibold transition-all w-full mb-1; }
-            .badge-status { @apply text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100; }
-            .badge-ml { @apply text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-100; }
+            .badge-correios { @apply text-[9px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100 flex items-center gap-1 hover:bg-blue-600 hover:text-white transition-all cursor-pointer; }
+            .status-text { @apply text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100 mt-1 inline-flex items-center gap-1 uppercase; }
+            .btn-page { @apply w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-all border border-gray-200 hover:bg-gray-50 disabled:opacity-30; }
         }
     </style>
 </head>
@@ -40,11 +41,7 @@
             </nav>
         </aside>
 
-        <main class="flex-1 overflow-y-auto p-6 lg:p-12 relative">
-            <div v-if="loading" class="fixed top-8 right-8 bg-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 text-xs font-bold border border-gray-100 animate-pulse text-accent">
-                <i class="fa-solid fa-circle-notch fa-spin"></i> SINCRONIZANDO
-            </div>
-
+        <main class="flex-1 overflow-y-auto p-6 lg:p-12 relative bg-[#f8fafc]">
             <div v-show="telaAtual === 'dashboard'" class="animate-fade-in space-y-10 max-w-6xl mx-auto">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                     <div class="card"><p class="text-[10px] text-emerald-600 font-bold uppercase mb-2">Lucro Total</p><p class="text-4xl font-bold tracking-tighter">{{ formatarMoeda(kpis.lucro) }}</p></div>
@@ -73,10 +70,9 @@
                         </select>
                         <div class="grid grid-cols-2 gap-4">
                             <input v-model="vendaInput.mlOrderId" type="text" placeholder="Pedido ML" class="input-soft !py-3 bg-orange-50/30">
-                            <input v-model="vendaInput.trackingCode" type="text" placeholder="Rastreio" class="input-soft !py-3 bg-blue-50/30 uppercase">
+                            <input v-model="vendaInput.trackingCode" type="text" placeholder="Correios" class="input-soft !py-3 bg-blue-50/30 uppercase">
                         </div>
                         <div class="text-center py-4">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">Valor Total</label>
                             <div class="flex items-center justify-center gap-2 font-bold">
                                 <span class="text-4xl italic">R$</span>
                                 <input v-model.number="vendaInput.precoVenda" type="number" class="text-6xl bg-transparent w-64 text-center outline-none tracking-tighter">
@@ -84,9 +80,9 @@
                         </div>
                         <div class="flex flex-col items-center gap-4">
                             <div class="flex items-center gap-6 bg-slate-50 p-2 rounded-2xl border border-slate-100">
-                                <button @click="alterarQuantidade(-1)" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm hover:bg-red-50 text-2xl font-bold">-</button>
+                                <button @click="alterarQuantidade(-1)" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm hover:bg-red-50 text-2xl font-bold border border-gray-100">-</button>
                                 <span class="text-3xl font-bold w-12 text-center">{{ vendaInput.quantidade }}</span>
-                                <button @click="alterarQuantidade(1)" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm hover:bg-blue-50 text-2xl font-bold">+</button>
+                                <button @click="alterarQuantidade(1)" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm hover:bg-blue-50 text-2xl font-bold border border-gray-100">+</button>
                             </div>
                         </div>
                         <button @click="confirmarVenda" class="btn-primary w-full py-5 text-xl">Confirmar Venda</button>
@@ -104,7 +100,7 @@
                     <input v-model.number="filtrosEstoque.precoMax" type="number" placeholder="Até R$..." class="input-soft !text-left !px-6" @input="currentPage = 1">
                 </div>
                 <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-                    <table class="w-full text-left font-semibold">
+                    <table class="w-full text-left font-semibold text-sm">
                         <thead class="bg-gray-50 text-[10px] font-bold uppercase text-gray-400 tracking-widest border-b">
                             <tr>
                                 <th class="py-5 px-6">Produto</th>
@@ -122,27 +118,35 @@
                                 <td class="py-5 px-6 text-right text-orange-600 font-bold">{{ formatarMoeda(p.preco_suger_ml) }}</td>
                                 <td class="py-5 px-6 text-center">
                                     <div class="flex justify-center gap-4 text-lg">
-                                        <button @click="abrirModalEdicao(p)" class="text-accent hover:scale-110"><i class="fa-solid fa-pen-to-square"></i></button>
-                                        <button @click="confirmarExcluirProduto(p.id)" class="text-red-400 hover:scale-110"><i class="fa-solid fa-trash-can"></i></button>
+                                        <button @click="abrirModalEdicao(p)" class="text-accent"><i class="fa-solid fa-pen-to-square"></i></button>
+                                        <button @click="confirmarExcluirProduto(p.id)" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
                                     </div>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                    <div v-if="totalPages > 1" class="p-6 border-t border-gray-100 flex items-center justify-between">
+                        <span class="text-xs font-bold text-gray-400">Mostrando {{ itemsRange }}</span>
+                        <div class="flex gap-2">
+                            <button @click="mudarPagina(-1)" :disabled="currentPage === 1" class="btn-page"><i class="fa-solid fa-chevron-left"></i></button>
+                            <span class="text-sm font-bold px-4 text-primary self-center">{{ currentPage }} / {{ totalPages }}</span>
+                            <button @click="mudarPagina(1)" :disabled="currentPage === totalPages" class="btn-page"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div v-show="telaAtual === 'historico'" class="space-y-8 max-w-6xl mx-auto">
-                <h2 class="text-3xl font-bold tracking-tighter px-4">Histórico de Vendas</h2>
+                <div class="flex justify-between items-center px-4">
+                    <h2 class="text-3xl font-bold tracking-tighter">Histórico</h2>
+                    <button @click="sincronizarStatusCorreios" class="text-accent text-sm font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-sync" :class="{'fa-spin': loading}"></i> Sincronizar Correios
+                    </button>
+                </div>
                 <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-                    <table class="w-full text-left font-semibold">
+                    <table class="w-full text-left font-semibold text-sm">
                         <thead class="bg-gray-50 text-[10px] font-bold uppercase text-gray-400 border-b">
-                            <tr>
-                                <th class="py-5 px-6">Data</th>
-                                <th class="py-5 px-6">Produto</th>
-                                <th class="py-5 px-6">ML ID / Rastreio</th>
-                                <th class="py-5 px-6 text-right">Lucro</th>
-                            </tr>
+                            <tr><th class="py-5 px-6">Data</th><th class="py-5 px-6">Produto</th><th class="py-5 px-6">Rastreio / Status</th><th class="py-5 px-6 text-right">Lucro</th></tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
                             <tr v-for="v in vendas" :key="v.id" class="hover:bg-slate-50">
@@ -150,8 +154,8 @@
                                 <td class="py-5 px-6">{{ v.nome_produto_snapshot }}</td>
                                 <td class="py-5 px-6">
                                     <div class="flex flex-col gap-1">
-                                        <span v-if="v.ml_order_id" class="badge-ml w-max">ML: {{ v.ml_order_id }}</span>
-                                        <span v-if="v.tracking_code" class="badge-status w-max">📦 {{ v.tracking_code }}</span>
+                                        <button v-if="v.tracking_code" @click="abrirRastreio(v.tracking_code)" class="badge-correios w-max">📦 {{ v.tracking_code }}</button>
+                                        <div v-if="v.tracking_status" class="status-text"><i class="fa-solid fa-truck-fast"></i> {{ v.tracking_status }}</div>
                                     </div>
                                 </td>
                                 <td class="py-5 px-6 text-right text-emerald-600 font-bold">{{ formatarMoeda(v.lucro_liquido) }}</td>
@@ -167,25 +171,24 @@
                 <div class="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-check"></i></div>
                 <h4 class="text-xl font-bold mb-2">{{ feedback.titulo }}</h4>
                 <p class="text-gray-500 text-sm mb-6">{{ feedback.mensagem }}</p>
-                <button @click="feedback.aberto = false" class="btn-primary w-full py-3 text-sm">OK</button>
+                <button @click="feedback.aberto = false" class="btn-primary w-full py-3">OK</button>
             </div>
         </div>
 
         <div v-if="confirmDialog.aberto" class="fixed inset-0 z-[110] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white rounded-[2.5rem] p-8 max-w-xs w-full text-center shadow-2xl">
                 <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                <h4 class="text-xl font-bold mb-2">Remover?</h4>
-                <p class="text-gray-500 text-sm mb-8 italic">Ação irreversível.</p>
+                <h4 class="text-xl font-bold mb-2">Eliminar?</h4>
                 <div class="flex gap-3">
                     <button @click="confirmDialog.aberto = false" class="flex-1 font-bold text-gray-400">Não</button>
-                    <button @click="confirmDialog.acaoConfirmada" class="flex-1 bg-red-500 text-white rounded-xl py-3 font-bold uppercase text-[10px]">Excluir</button>
+                    <button @click="confirmDialog.acaoConfirmada" class="flex-1 bg-red-500 text-white rounded-xl py-3 font-bold">Sim</button>
                 </div>
             </div>
         </div>
 
         <div v-if="modalAberto" class="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl">
-                <h3 class="text-2xl font-bold mb-6 text-center uppercase tracking-tighter">{{ novoProduto.id ? 'Editar' : 'Novo' }} Perfume</h3>
+                <h3 class="text-2xl font-bold mb-6 text-center">{{ novoProduto.id ? 'Editar' : 'Novo' }}</h3>
                 <div class="space-y-4">
                     <input v-model="novoProduto.nome" type="text" placeholder="Nome" class="input-soft !text-left">
                     <input v-model="novoProduto.inspiracao" type="text" placeholder="Inspiração" class="input-soft !text-left">
@@ -195,8 +198,8 @@
                     </div>
                 </div>
                 <div class="flex gap-4 mt-8">
-                    <button @click="modalAberto = false" class="flex-1 font-bold text-gray-400 uppercase tracking-widest text-[10px]">Sair</button>
-                    <button @click="salvarProduto" class="flex-1 btn-primary text-[10px] uppercase">Salvar</button>
+                    <button @click="modalAberto = false" class="flex-1 font-bold text-gray-400">Sair</button>
+                    <button @click="salvarProduto" class="flex-1 btn-primary text-xs">Salvar</button>
                 </div>
             </div>
         </div>
