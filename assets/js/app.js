@@ -20,11 +20,11 @@ createApp({
         }
     },
     watch: {
-        // CÁLCULO AUTOMÁTICO AO DIGITAR O CUSTO
+        // CÁLCULO AUTOMÁTICO (Margem 30% + Taxa ML)
         'novoProduto.custo'(novoCusto) {
-            if (novoCusto > 0 && !this.novoProduto.id) { // Só calcula automaticamente para novos produtos
-                const taxaML = APP_CONFIG.NEGOCIO.TAXA_ML;
-                const margemLucro = 1.30; // Exemplo: 30% de margem sobre o custo
+            if (novoCusto > 0 && !this.novoProduto.id) {
+                const taxaML = 60.00;
+                const margemLucro = 1.30;
                 this.novoProduto.preco_suger_ml = parseFloat((novoCusto * margemLucro + taxaML).toFixed(2));
             }
         }
@@ -74,25 +74,6 @@ createApp({
                 if(this.telaAtual === 'dashboard') nextTick(() => this.renderizarGrafico());
             } catch(e) { console.error(e); } finally { this.loading = false; }
         },
-        async sincronizarStatusCorreios() {
-            const vendasAtivas = this.vendas.filter(v => v.tracking_code && v.tracking_status !== 'Objeto entregue ao destinatário');
-            if (vendasAtivas.length === 0) return;
-            this.loading = true;
-            for (const venda of vendasAtivas) {
-                try {
-                    const response = await fetch(`https://api.linkrastreio.com.br/rastreio?id=${venda.tracking_code}`);
-                    const data = await response.json();
-                    if (data.eventos && data.eventos.length > 0) {
-                        const statusAtual = data.eventos[0].status;
-                        if (statusAtual !== venda.tracking_status) {
-                            await supabase.from('vendas').update({ tracking_status: statusAtual }).eq('id', venda.id);
-                            venda.tracking_status = statusAtual;
-                        }
-                    }
-                } catch (err) { console.warn("Erro Correios:", venda.tracking_code); }
-            }
-            this.loading = false;
-        },
         abrirRastreio(codigo) { window.open(`https://api.linkrastreio.com.br/rastreio?id=${codigo}`, '_blank'); },
         abrirModalNovo() { this.novoProduto = { id: null, nome: '', custo: null, inspiracao: '', preco_suger_ml: null }; this.modalAberto = true; },
         abrirModalEdicao(p) { this.novoProduto = { ...p }; this.modalAberto = true; },
@@ -102,7 +83,7 @@ createApp({
                 const { error } = await db.salvarProduto(this.novoProduto);
                 if(error) throw error;
                 this.modalAberto = false; await this.carregarDados();
-                this.feedback = { aberto: true, titulo: 'Sucesso', mensagem: 'Produto registrado com preço calculado.' };
+                this.feedback = { aberto: true, titulo: 'Sucesso', mensagem: 'Estoque atualizado.' };
             } catch(e) { alert(e.message); } finally { this.loading = false; }
         },
         confirmarExcluirProduto(id) {
@@ -117,11 +98,11 @@ createApp({
         },
         confirmarExcluirVenda(id) {
             this.confirmDialog = {
-                aberto: true, mensagem: 'Deseja excluir este registro de venda?',
+                aberto: true, mensagem: 'Excluir registro de venda?',
                 acaoConfirmada: async () => {
                     this.confirmDialog.aberto = false; this.loading = true;
                     await db.deletarVenda(id); await this.carregarDados();
-                    this.feedback = { aberto: true, titulo: 'Venda Removida', mensagem: 'O registro foi excluído.' };
+                    this.feedback = { aberto: true, titulo: 'Removido', mensagem: 'Venda excluída.' };
                 }
             };
         },
@@ -144,7 +125,7 @@ createApp({
                 const qtd = this.vendaInput.quantidade;
                 const total = this.vendaInput.precoVenda;
                 const unitario = total / qtd;
-                const lucro = total - (this.produtoSelecionado.custo * qtd) - (APP_CONFIG.NEGOCIO.TAXA_ML * qtd);
+                const lucro = total - (this.produtoSelecionado.custo * qtd) - (60 * qtd);
                 const { error } = await db.registrarVenda({
                     produto_id: this.vendaInput.produtoId,
                     nome_produto_snapshot: this.produtoSelecionado.nome,
@@ -153,14 +134,12 @@ createApp({
                     faturamento_total: total,
                     lucro_liquido: lucro,
                     ml_order_id: this.vendaInput.mlOrderId,
-                    tracking_code: this.vendaInput.trackingCode.toUpperCase(),
-                    tracking_status: 'Aguardando Postagem'
+                    tracking_code: this.vendaInput.trackingCode.toUpperCase()
                 });
                 if(error) throw error;
                 this.vendaInput = { produtoId: '', precoVenda: null, quantidade: 1, precoUnitarioBase: 0, mlOrderId: '', trackingCode: '' };
                 await this.carregarDados();
-                this.feedback = { aberto: true, titulo: 'Venda Salva!', mensagem: 'Sincronizando status...' };
-                setTimeout(() => this.sincronizarStatusCorreios(), 2000);
+                this.feedback = { aberto: true, titulo: 'Venda Salva!', mensagem: 'Registrado com sucesso.' };
             } catch(e) { alert("Erro: " + e.message); } finally { this.loading = false; }
         },
         renderizarGrafico() {
@@ -178,5 +157,5 @@ createApp({
             });
         }
     },
-    mounted() { this.carregarDados(); setTimeout(() => this.sincronizarStatusCorreios(), 4000); }
+    mounted() { this.carregarDados(); }
 }).mount('#app');
