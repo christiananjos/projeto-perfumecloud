@@ -18,5 +18,8 @@ export const db = {
         if (produto.id) return await _supabase.from('produtos').update(produto).eq('id', produto.id);
         const { id, ...dados } = produto;
         return await _supabase.from('produtos').insert([dados]);
+    },
+    async excluirProduto(id) {
+        return await _supabase.from('produtos').delete().eq('id', id);
     }
 };

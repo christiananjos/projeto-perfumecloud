@@ -11,11 +11,12 @@ createApp({
             produtos: [], vendas: [],
             vendaInput: { produtoId: '', precoVenda: null, quantidade: 1, precoUnitarioBase: 0, mlOrderId: '', trackingCode: '' },
             filtrosEstoque: { termo: '', precoMax: null },
-            currentPage: 1, itemsPerPage: 10,
+            currentPage: 1, itemsPerPage: 8,
             novoProduto: { id: null, nome: '', custo: null, inspiracao: '', preco_suger_ml: null },
             dashboardData: { topProdutos: [], cores: APP_CONFIG.CORES },
             pieChartInstance: null,
-            feedback: { aberto: false, titulo: '', mensagem: '' }
+            feedback: { aberto: false, titulo: '', mensagem: '' },
+            confirmDialog: { aberto: false, mensagem: '', acaoConfirmada: null }
         }
     },
     computed: {
@@ -26,7 +27,7 @@ createApp({
         },
         produtosFiltrados() {
             return this.produtos.filter(p => {
-                const busca = this.filtrosEstoque.termo.toLowerCase();
+                const busca = (this.filtrosEstoque.termo || '').toLowerCase();
                 const termoOk = p.nome.toLowerCase().includes(busca) || (p.inspiracao && p.inspiracao.toLowerCase().includes(busca));
                 const precoOk = !this.filtrosEstoque.precoMax || p.custo <= this.filtrosEstoque.precoMax;
                 return termoOk && precoOk;
@@ -37,11 +38,6 @@ createApp({
             const start = (this.currentPage - 1) * this.itemsPerPage;
             return this.produtosFiltrados.slice(start, start + this.itemsPerPage);
         },
-        itemsRange() {
-            const start = (this.currentPage - 1) * this.itemsPerPage + 1;
-            const end = Math.min(this.currentPage * this.itemsPerPage, this.produtosFiltrados.length);
-            return this.produtosFiltrados.length > 0 ? `${start}-${end}` : '0-0';
-        },
         produtoSelecionado() { return this.produtos.find(p => p.id === this.vendaInput.produtoId); }
     },
     methods: {
@@ -51,7 +47,6 @@ createApp({
             if(this.isMobile) this.menuAberto = false; 
             if(t === 'dashboard') nextTick(() => this.renderizarGrafico());
         },
-        mudarPagina(dir) { if (this.currentPage + dir >= 1 && this.currentPage + dir <= this.totalPages) this.currentPage += dir; },
         async carregarDados() {
             this.loading = true;
             try {
@@ -60,6 +55,34 @@ createApp({
                 if(this.telaAtual === 'dashboard') nextTick(() => this.renderizarGrafico());
             } catch(e) { console.error(e); } finally { this.loading = false; }
         },
+        // AÇÕES DE PRODUTO
+        abrirModalNovo() { this.novoProduto = { id: null, nome: '', custo: null, inspiracao: '', preco_suger_ml: null }; this.modalAberto = true; },
+        abrirModalEdicao(p) { this.novoProduto = { ...p }; this.modalAberto = true; },
+        async salvarProduto() {
+            this.loading = true;
+            try {
+                const { error } = await db.salvarProduto(this.novoProduto);
+                if(error) throw error;
+                this.modalAberto = false; await this.carregarDados();
+                this.feedback = { aberto: true, titulo: 'Sucesso', mensagem: 'Estoque atualizado.' };
+            } catch(e) { alert(e.message); } finally { this.loading = false; }
+        },
+        confirmarExcluirProduto(id) {
+            this.confirmDialog = {
+                aberto: true,
+                mensagem: 'Remover este perfume permanentemente?',
+                acaoConfirmada: async () => {
+                    this.confirmDialog.aberto = false;
+                    this.loading = true;
+                    try {
+                        await db.excluirProduto(id);
+                        await this.carregarDados();
+                        this.feedback = { aberto: true, titulo: 'Removido', mensagem: 'Produto excluído.' };
+                    } catch(e) { alert(e.message); } finally { this.loading = false; }
+                }
+            };
+        },
+        // AÇÕES DE VENDA
         aplicarPrecoSugerido() {
             if(this.produtoSelecionado) {
                 this.vendaInput.precoUnitarioBase = this.produtoSelecionado.preco_suger_ml || 0;
@@ -77,34 +100,26 @@ createApp({
             this.loading = true;
             try {
                 const qtd = this.vendaInput.quantidade;
-                const fat = this.vendaInput.precoVenda;
-                const unitario = fat / qtd;
-                const lucro = fat - (this.produtoSelecionado.custo * qtd) - (APP_CONFIG.NEGOCIO.TAXA_ML * qtd);
+                const total = this.vendaInput.precoVenda;
+                const unitario = total / qtd;
+                const lucro = total - (this.produtoSelecionado.custo * qtd) - (60 * qtd); // Taxa ML fixa 60
 
                 const { error } = await db.registrarVenda({
                     produto_id: this.vendaInput.produtoId,
                     nome_produto_snapshot: this.produtoSelecionado.nome,
                     quantidade: qtd,
                     preco_venda_unitario: unitario,
-                    faturamento_total: fat,
+                    faturamento_total: total,
                     lucro_liquido: lucro,
                     ml_order_id: this.vendaInput.mlOrderId,
-                    tracking_code: this.vendaInput.trackingCode.toUpperCase()
+                    tracking_code: this.vendaInput.trackingCode.toUpperCase(),
+                    tracking_status: 'Pendente'
                 });
                 if(error) throw error;
                 this.vendaInput = { produtoId: '', precoVenda: null, quantidade: 1, precoUnitarioBase: 0, mlOrderId: '', trackingCode: '' };
                 await this.carregarDados();
-                this.feedback = { aberto: true, titulo: 'Venda Sucesso!', mensagem: 'Registrado no banco de dados.' };
+                this.feedback = { aberto: true, titulo: 'Venda Salva!', mensagem: 'Registrado com sucesso.' };
             } catch(e) { alert("Erro: " + e.message); } finally { this.loading = false; }
-        },
-        async salvarProduto() {
-            this.loading = true;
-            try {
-                const { error } = await db.salvarProduto(this.novoProduto);
-                if(error) throw error;
-                this.modalAberto = false; await this.carregarDados();
-                this.feedback = { aberto: true, titulo: 'Sucesso', mensagem: 'Estoque atualizado.' };
-            } catch(e) { alert(e.message); } finally { this.loading = false; }
         },
         renderizarGrafico() {
             const ctx = document.getElementById('pieChart');
