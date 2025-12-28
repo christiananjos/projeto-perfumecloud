@@ -84,8 +84,12 @@ const VenderView = {
         async salvar() {
             const p = this.produtos.find(i => i.id === this.form.produtoId);
             
-            // Cálculo do Lucro: (Preço Unitário - Custo - Taxa Fixa 60) * Quantidade
-            const lucroTotal = (this.form.precoUnitario - p.custo - 60) * this.form.quantidade;
+            // Busca o valor da Taxa Fixa salvo (Padrão R$ 60 se não existir)
+            const taxaSalva = localStorage.getItem('taxaMLFixa');
+            const valorTaxaFixa = taxaSalva ? parseFloat(taxaSalva) : 60.00;
+
+            // CÁLCULO DO LUCRO: (Preço Unitário - Custo - Taxa Fixa Configurada) * Quantidade
+            const lucroTotal = (this.form.precoUnitario - p.custo - valorTaxaFixa) * this.form.quantidade;
 
             const { error } = await window.supabase.from('vendas').insert([{
                 produto_id: this.form.produtoId,
@@ -101,10 +105,8 @@ const VenderView = {
             if(!error) {
                 this.$emit('notificar', { 
                     titulo: 'Venda Registrada!', 
-                    texto: `Total: R$ ${this.totalVendaFormatado} | Lucro: R$ ${lucroTotal.toFixed(2)}` 
+                    texto: `Lucro: R$ ${lucroTotal.toFixed(2)}` 
                 });
-                
-                // Reseta o formulário
                 this.form = { produtoId: '', quantidade: 1, precoUnitario: 0, precoVendaTotal: 0, mlOrderId: '', trackingCode: '' };
                 this.$emit('refresh');
             } else {
