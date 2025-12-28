@@ -40,9 +40,13 @@ const HistoricoView = {
                                     <span class="text-slate-700 font-bold truncate leading-tight text-[11px] md:text-sm">
                                         {{ v.nome_produto_snapshot }}
                                     </span>
+                                    
                                     <div class="md:hidden flex items-center gap-2 mt-0.5">
                                         <span v-if="v.ml_order_id" class="text-[8px] text-orange-600 font-black uppercase">#{{ v.ml_order_id }}</span>
-                                        <button v-if="v.tracking_code" @click="abrirRastreio(v.tracking_code)" class="text-[8px] text-blue-500 font-bold underline">Rastrear</button>
+                                        <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" 
+                                                class="text-[8px] text-blue-500 font-bold flex items-center gap-1 active:text-blue-800">
+                                            <i class="fa-solid fa-copy"></i> {{ v.tracking_code }}
+                                        </button>
                                     </div>
                                 </div>
                             </td>
@@ -55,9 +59,9 @@ const HistoricoView = {
                             </td>
 
                             <td class="py-5 px-6 hidden md:table-cell">
-                                <button v-if="v.tracking_code" @click="abrirRastreio(v.tracking_code)" 
-                                        class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black border border-blue-100 hover:bg-blue-600 hover:text-white transition-all uppercase">
-                                    📦 {{ v.tracking_code }}
+                                <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" 
+                                        class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black border border-blue-100 hover:bg-blue-200 transition-all uppercase flex items-center gap-2">
+                                    <i class="fa-solid fa-copy"></i> {{ v.tracking_code }}
                                 </button>
                                 <span v-else class="text-gray-300 italic text-xs">---</span>
                             </td>
@@ -79,22 +83,14 @@ const HistoricoView = {
             </div>
 
             <div v-if="vendasFiltradas.length > 0" class="p-3 md:p-6 bg-gray-50 border-t border-gray-100 flex justify-between items-center shrink-0">
-                <span class="text-[9px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">
-                    {{ paginaAtual }}/{{ totalPaginas }}
-                </span>
-                
+                <span class="text-[9px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">{{ paginaAtual }}/{{ totalPaginas }}</span>
                 <div class="flex gap-1 md:gap-2">
                     <button @click="paginaAtual--" :disabled="paginaAtual === 1" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white border rounded-xl disabled:opacity-30">
                         <i class="fa-solid fa-chevron-left text-[10px]"></i>
                     </button>
-                    
-                    <button v-for="p in paginasVisiveis" :key="p" 
-                            @click="paginaAtual = p"
+                    <button v-for="p in paginasVisiveis" :key="p" @click="paginaAtual = p"
                             :class="paginaAtual === p ? 'bg-blue-600 text-white shadow-sm border-blue-600' : 'bg-white text-gray-400 border border-gray-200'"
-                            class="w-8 h-8 md:w-10 md:h-10 rounded-xl font-bold text-[10px] md:text-xs transition-all">
-                        {{ p }}
-                    </button>
-
+                            class="w-8 h-8 md:w-10 md:h-10 rounded-xl font-bold text-[10px] md:text-xs transition-all">{{ p }}</button>
                     <button @click="paginaAtual++" :disabled="paginaAtual === totalPaginas" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white border rounded-xl disabled:opacity-30">
                         <i class="fa-solid fa-chevron-right text-[10px]"></i>
                     </button>
@@ -110,20 +106,14 @@ const HistoricoView = {
             itensPorPagina: window.innerWidth < 768 ? 7 : 10
         }
     },
-    watch: {
-        'busca'() { this.paginaAtual = 1; }
-    },
     computed: {
         vendasFiltradas() {
             if (!this.vendas) return [];
-            const termo = this.busca.toLowerCase(); // Converte o termo de busca para minúsculo
-            
+            const termo = this.busca.toLowerCase();
             return this.vendas.filter(v => {
-                // Converte cada campo para string e minúsculo antes de comparar
                 const nome = (v.nome_produto_snapshot || "").toLowerCase();
                 const pedido = (v.ml_order_id || "").toLowerCase();
                 const rastreio = (v.tracking_code || "").toLowerCase();
-                
                 return nome.includes(termo) || pedido.includes(termo) || rastreio.includes(termo);
             });
         },
@@ -141,8 +131,23 @@ const HistoricoView = {
         }
     },
     methods: {
-        abrirRastreio(codigo) {
-            window.open(`https://api.linkrastreio.com.br/rastreio?id=${codigo}`, '_blank');
+        async copiarCodigo(codigo) {
+            try {
+                await navigator.clipboard.writeText(codigo);
+                this.$emit('notificar', { 
+                    titulo: 'Copiado!', 
+                    texto: 'Código ' + codigo + ' copiado para a área de transferência.' 
+                });
+            } catch (err) {
+                // Fallback caso o navegador bloqueie o clipboard API
+                const input = document.createElement('input');
+                input.value = codigo;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                this.$emit('notificar', { titulo: 'Copiado!', texto: 'Código copiado.' });
+            }
         },
         async remover(id) {
             if(confirm("Excluir esta venda?")) {
