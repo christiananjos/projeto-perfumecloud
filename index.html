@@ -4,42 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PerfumeCloud Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="./assets/css/style.css">
-    
-    <script>
-        // CONFIGURAÇÃO OFICIAL DO SEU PROJETO
-        const SUPABASE_URL = 'https://ucnielenhniqsgvfmygl.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjbmllbGVuaG5pcXNndmZteWdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NDMzMzgsImV4cCI6MjA4MjExOTMzOH0.NZjAofrAc0PqeVC__8-XX_8ZwYHjC4_A77lj9sMgg1w';
-        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    </script>
 </head>
-<body class="h-screen overflow-hidden">
+<body class="h-screen overflow-hidden bg-[#f8fafc]">
     <div id="app" class="h-full">
         <login-view v-if="!session" @logged="onLogin"></login-view>
 
-        <div v-else class="flex h-full w-full">
-            <aside class="w-72 bg-white border-r border-gray-100 flex flex-col shadow-xl z-30">
-                <div class="p-10 font-bold text-xl flex items-center gap-3">
-                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fa-solid fa-cloud"></i></div>
+        <div v-else class="flex h-full w-full relative">
+            
+            <button @click="menuAberto = !menuAberto" 
+                    class="lg:hidden fixed top-4 left-4 z-50 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center text-blue-600 border border-gray-100">
+                <i :class="menuAberto ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'"></i>
+            </button>
+
+            <div v-if="menuAberto" @click="menuAberto = false" 
+                 class="lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30"></div>
+
+            <aside :class="menuAberto ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+                   class="fixed lg:static inset-y-0 left-0 w-72 bg-white border-r border-gray-100 flex flex-col shadow-xl z-40 transition-transform duration-300 ease-in-out">
+                
+                <div class="p-8 font-bold text-xl flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                        <i class="fa-solid fa-cloud"></i>
+                    </div>
                     PerfumeCloud
                 </div>
-                <nav class="flex-1 px-4">
-                    <button v-for="t in menu" @click="navegar(t.id)" :class="telaAtual === t.id ? 'bg-blue-50 text-blue-600' : 'text-gray-400'" class="sidebar-item">
+
+                <nav class="flex-1 px-4 space-y-2">
+                    <button v-for="t in menu" 
+                            @click="navegar(t.id)" 
+                            :class="telaAtual === t.id ? 'bg-blue-50 text-blue-600' : 'text-gray-400 hover:bg-gray-50'" 
+                            class="w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-bold transition-all">
                         <i :class="t.icon"></i> {{ t.label }}
                     </button>
                 </nav>
+
                 <div class="p-6 border-t border-gray-50">
-                    <button @click="fazerLogout" class="sidebar-item text-red-400 hover:bg-red-50"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+                    <button @click="fazerLogout" class="w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-bold text-red-400 hover:bg-red-50">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sair
+                    </button>
                 </div>
             </aside>
 
-            <main class="flex-1 overflow-y-auto p-12 relative bg-[#f8fafc]">
+            <main class="flex-1 overflow-y-auto p-4 lg:p-12 relative">
+                <div class="lg:hidden h-14"></div>
+                
                 <component 
                     :is="telaAtual + '-view'" 
                     :produtos="produtos" 
@@ -51,15 +65,22 @@
             </main>
         </div>
 
-        <div v-if="feedback.aberto" class="fixed inset-0 z-[300] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="bg-white rounded-[2.5rem] p-8 max-w-xs w-full text-center shadow-2xl animate-fade-in">
-                <div class="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-check"></i></div>
-                <h4 class="text-xl font-bold mb-2 text-slate-900">{{ feedback.titulo }}</h4>
-                <p class="text-gray-500 text-sm mb-6">{{ feedback.mensagem }}</p>
-                <button @click="feedback.aberto = false" class="btn-primary w-full py-3">OK</button>
+        <div v-if="feedback.ativo" class="fixed bottom-6 right-6 z-[60] animate-fade-in">
+            <div class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-2xl border border-slate-700 min-w-[300px]">
+                <h4 class="font-bold text-blue-400 uppercase text-[10px] tracking-widest mb-1">{{ feedback.titulo }}</h4>
+                <p class="text-slate-300 text-sm font-medium">{{ feedback.texto }}</p>
             </div>
         </div>
     </div>
+
+    <script>
+    // ESTES DADOS VOCÊ PEGA NO PAINEL DO SUPABASE (Settings > API)
+    const SUPABASE_URL = 'https://ucnielenhniqsgvfmygl.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjbmllbGVuaG5pcXNndmZteWdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NDMzMzgsImV4cCI6MjA4MjExOTMzOH0.NZjAofrAc0PqeVC__8-XX_8ZwYHjC4_A77lj9sMgg1w';
+    
+    // Inicialização correta
+    window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
     <script type="module" src="./assets/js/app.js"></script>
 </body>
 </html>
