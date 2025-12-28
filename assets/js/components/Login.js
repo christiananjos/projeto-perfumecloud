@@ -1,29 +1,63 @@
 const LoginView = {
     template: `
-    <div class="fixed inset-0 z-[200] bg-white flex items-center justify-center p-4">
-        <div class="w-full max-w-md space-y-8 animate-fade-in">
-            <div class="text-center">
-                <div class="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center text-white shadow-2xl mx-auto mb-6 text-3xl"><i class="fa-solid fa-cloud"></i></div>
-                <h1 class="text-4xl font-bold tracking-tighter text-slate-900">PerfumeCloud Pro</h1>
-            </div>
-            <div class="card !p-10 shadow-2xl space-y-6">
-                <div class="space-y-4">
-                    <input v-model="email" type="email" placeholder="E-mail" class="input-soft">
-                    <input v-model="password" type="password" placeholder="Senha" class="input-soft" @keyup.enter="login">
+    <div class="flex items-center justify-center min-h-screen bg-[#f8fafc] px-4">
+        <div class="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl space-y-8 animate-fade-in border border-gray-100">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl mx-auto shadow-lg mb-4">
+                    <i class="fa-solid fa-lock"></i>
                 </div>
-                <button @click="login" class="btn-primary w-full py-5 text-lg uppercase tracking-widest">Acessar Painel</button>
+                <h2 class="text-3xl font-bold tracking-tighter text-slate-900">Acesso Restrito</h2>
+                <p class="text-sm text-gray-400 font-medium uppercase tracking-widest">PerfumeCloud Pro</p>
             </div>
+
+            <div class="space-y-4">
+                <div class="space-y-1 text-left">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-4">Usuário</label>
+                    <input v-model="username" type="text" placeholder="Seu nome de usuário" class="input-soft">
+                </div>
+                <div class="space-y-1 text-left">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-4">Senha</label>
+                    <input v-model="password" type="password" placeholder="••••••••" class="input-soft" @keyup.enter="entrar">
+                </div>
+            </div>
+
+            <button @click="entrar" :disabled="carregando" class="btn-primary w-full py-5 text-sm font-bold uppercase tracking-[0.2em] shadow-xl">
+                {{ carregando ? 'Autenticando...' : 'Entrar no Sistema' }}
+            </button>
         </div>
     </div>`,
-    data() { return { email: '', password: '' } },
+    data() {
+        return {
+            username: '',
+            password: '',
+            carregando: false,
+            SUFIXO: '@meusistema.com' // Altere para o domínio fictício que você criou no painel
+        }
+    },
     methods: {
-        async login() {
+        async entrar() {
+            if (!this.username || !this.password) return;
+            this.carregando = true;
+
+            // Transforma "admin" em "admin@meusistema.com"
+            const emailFake = this.username.trim().toLowerCase() + this.SUFIXO;
+
             try {
-                const { data, error } = await window.supabase.auth.signInWithPassword({ email: this.email, password: this.password });
+                const { data, error } = await window.supabase.auth.signInWithPassword({
+                    email: emailFake,
+                    password: this.password
+                });
+
                 if (error) throw error;
                 this.$emit('logged', data.session);
-            } catch (err) { alert("Acesso negado: " + err.message); }
+            } catch (err) {
+                alert("Usuário ou senha inválidos.");
+                console.error(err.message);
+            } finally {
+                this.carregando = false;
+            }
         }
     }
 };
+
 export default LoginView;
