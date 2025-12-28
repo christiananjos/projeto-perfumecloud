@@ -65,12 +65,17 @@
             </main>
         </div>
 
-        <div v-if="feedback.ativo" class="fixed bottom-6 right-6 z-[60] animate-fade-in">
-            <div class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-2xl border border-slate-700 min-w-[300px]">
-                <h4 class="font-bold text-blue-400 uppercase text-[10px] tracking-widest mb-1">{{ feedback.titulo }}</h4>
-                <p class="text-slate-300 text-sm font-medium">{{ feedback.texto }}</p>
-            </div>
+       <div v-if="feedback.ativo" class="fixed top-6 left-0 right-0 z-[100] flex justify-center px-4 animate-slide-down">
+    <div class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-2xl border border-slate-700 min-w-[300px] max-w-md w-full flex items-center gap-4">
+        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-check text-white"></i>
         </div>
+        <div>
+            <h4 class="font-bold text-blue-400 uppercase text-[10px] tracking-widest mb-0.5">{{ feedback.titulo }}</h4>
+            <p class="text-slate-300 text-sm font-medium leading-tight">{{ feedback.texto }}</p>
+        </div>
+    </div>
+</div>
     </div>
 
     <script>
