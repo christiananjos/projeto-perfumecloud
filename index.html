@@ -17,9 +17,9 @@
 
         <div v-else class="flex h-full w-full relative">
             
-            <button @click="menuAberto = !menuAberto" 
-                    class="lg:hidden fixed top-4 left-4 z-50 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center text-blue-600 border border-gray-100">
-                <i :class="menuAberto ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'"></i>
+            <button v-if="!menuAberto" @click="menuAberto = true" 
+                    class="lg:hidden fixed top-4 left-4 z-50 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center text-blue-600 border border-gray-100 animate-fade-in">
+                <i class="fa-solid fa-bars"></i>
             </button>
 
             <div v-if="menuAberto" @click="menuAberto = false" 
@@ -65,27 +65,24 @@
             </main>
         </div>
 
-       <div v-if="feedback.ativo" class="fixed top-6 left-0 right-0 z-[100] flex justify-center px-4 animate-slide-down">
-    <div class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-2xl border border-slate-700 min-w-[300px] max-w-md w-full flex items-center gap-4">
-        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shrink-0">
-            <i class="fa-solid fa-check text-white"></i>
+        <div v-if="feedback.ativo" class="fixed top-6 left-0 right-0 z-[100] flex justify-center px-4 animate-slide-down">
+            <div class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-2xl border border-slate-700 min-w-[300px] max-w-md w-full flex items-center gap-4">
+                <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-check text-white"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-blue-400 uppercase text-[10px] tracking-widest mb-0.5">{{ feedback.titulo }}</h4>
+                    <p class="text-slate-300 text-sm font-medium leading-tight">{{ feedback.texto }}</p>
+                </div>
+            </div>
         </div>
-        <div>
-            <h4 class="font-bold text-blue-400 uppercase text-[10px] tracking-widest mb-0.5">{{ feedback.titulo }}</h4>
-            <p class="text-slate-300 text-sm font-medium leading-tight">{{ feedback.texto }}</p>
-        </div>
-    </div>
-</div>
     </div>
 
     <script>
-    // ESTES DADOS VOCÊ PEGA NO PAINEL DO SUPABASE (Settings > API)
-    const SUPABASE_URL = 'https://ucnielenhniqsgvfmygl.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjbmllbGVuaG5pcXNndmZteWdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NDMzMzgsImV4cCI6MjA4MjExOTMzOH0.NZjAofrAc0PqeVC__8-XX_8ZwYHjC4_A77lj9sMgg1w';
-    
-    // Inicialização correta
-    window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-</script>
+        const SUPABASE_URL = 'https://ucnielenhniqsgvfmygl.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_Q2-vD5bsPeejn0INaao1gA_XqvYhd96';
+        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    </script>
     <script type="module" src="./assets/js/app.js"></script>
 </body>
 </html>
