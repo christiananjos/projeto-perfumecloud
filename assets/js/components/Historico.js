@@ -23,7 +23,7 @@ const HistoricoView = {
                         <tr>
                             <th class="py-3 md:py-5 px-4 md:px-6 w-[18%] md:w-[12%]">Data</th>
                             <th class="py-3 md:py-5 px-4 md:px-6 w-[47%] md:w-[33%]">Produto</th>
-                            <th class="py-3 md:py-5 px-6 hidden md:table-cell md:w-[15%]">Pedido ML</th>
+                            <th class="py-3 md:py-5 px-6 hidden md:table-cell md:w-[15%]">Mercado Livre</th>
                             <th class="py-3 md:py-5 px-6 hidden md:table-cell md:w-[15%]">Rastreio</th>
                             <th class="py-3 md:py-5 px-4 md:px-6 text-right w-[20%] md:w-[15%] text-emerald-600">Lucro</th>
                             <th class="py-3 md:py-5 px-4 md:px-6 text-center w-[15%] md:w-[10%]">Ações</th>
@@ -41,33 +41,35 @@ const HistoricoView = {
                                         {{ v.nome_produto_snapshot }}
                                     </span>
                                     
-                                    <div class="md:hidden flex items-center gap-2 mt-0.5">
-                                        <span v-if="v.ml_order_id" class="text-[8px] text-orange-600 font-black uppercase">#{{ v.ml_order_id }}</span>
+                                    <div class="md:hidden flex items-center gap-2 mt-1">
+                                        <span v-if="v.ml_order_id" class="text-[8px] text-orange-600 font-black flex items-center gap-0.5">
+                                            <i class="fa-solid fa-handshake"></i> #{{ v.ml_order_id }}
+                                        </span>
                                         <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" 
-                                                class="text-[8px] text-blue-500 font-bold flex items-center gap-1 active:text-blue-800">
-                                            <i class="fa-solid fa-copy"></i> {{ v.tracking_code }}
+                                                class="text-[8px] text-blue-500 font-bold flex items-center gap-1 active:scale-95 transition-transform">
+                                            <i class="fa-solid fa-truck-fast"></i> {{ v.tracking_code }}
                                         </button>
                                     </div>
                                 </div>
                             </td>
 
                             <td class="py-5 px-6 hidden md:table-cell">
-                                <span v-if="v.ml_order_id" class="bg-orange-50 text-orange-600 px-3 py-1 rounded-full text-[10px] font-black border border-orange-100 uppercase">
-                                    #{{ v.ml_order_id }}
+                                <span v-if="v.ml_order_id" class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-[10px] font-black border border-yellow-200 uppercase flex items-center w-fit gap-1.5">
+                                    <i class="fa-solid fa-handshake text-xs"></i> #{{ v.ml_order_id }}
                                 </span>
                                 <span v-else class="text-gray-300 italic text-xs">---</span>
                             </td>
 
                             <td class="py-5 px-6 hidden md:table-cell">
                                 <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" 
-                                        class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black border border-blue-100 hover:bg-blue-200 transition-all uppercase flex items-center gap-2">
-                                    <i class="fa-solid fa-copy"></i> {{ v.tracking_code }}
+                                        class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black border border-blue-100 hover:bg-blue-600 hover:text-white transition-all uppercase flex items-center gap-2">
+                                    <i class="fa-solid fa-truck-fast"></i> {{ v.tracking_code }}
                                 </button>
                                 <span v-else class="text-gray-300 italic text-xs">---</span>
                             </td>
 
                             <td class="py-2 md:py-5 px-4 md:px-6 text-right">
-                                <span class="text-emerald-600 font-bold text-xs md:text-sm whitespace-nowrap">
+                                <span class="text-emerald-600 font-bold text-xs md:text-sm">
                                     R$ {{ (v.lucro_liquido || 0).toFixed(2) }}
                                 </span>
                             </td>
@@ -136,10 +138,9 @@ const HistoricoView = {
                 await navigator.clipboard.writeText(codigo);
                 this.$emit('notificar', { 
                     titulo: 'Copiado!', 
-                    texto: 'Código ' + codigo + ' copiado para a área de transferência.' 
+                    texto: 'Código de rastreio copiado.' 
                 });
             } catch (err) {
-                // Fallback caso o navegador bloqueie o clipboard API
                 const input = document.createElement('input');
                 input.value = codigo;
                 document.body.appendChild(input);
