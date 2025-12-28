@@ -25,10 +25,11 @@ const EstoqueView = {
                 <table class="w-full text-left font-semibold text-xs md:text-sm table-fixed min-w-full">
                     <thead class="bg-gray-50 text-[9px] md:text-[10px] font-bold uppercase text-gray-400 border-b">
                         <tr>
-                            <th class="py-3 md:py-5 px-4 md:px-6 w-[55%] md:w-[40%]">Produto</th>
-                            <th class="py-3 md:py-5 px-6 hidden md:table-cell md:w-[25%]">Inspiração</th>
-                            <th class="py-3 md:py-5 px-4 md:px-6 text-right text-orange-600 w-[25%] md:w-[15%]">Venda</th>
-                            <th class="py-3 md:py-5 px-4 md:px-6 text-center w-[20%] md:w-32">Ações</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 w-[45%] md:w-[35%]">Produto</th>
+                            <th class="py-3 md:py-5 px-6 hidden md:table-cell md:w-[20%]">Inspiração</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-right w-[20%] md:w-[15%]">Custo</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-right text-orange-600 w-[20%] md:w-[15%]">Venda</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-center w-[15%] md:w-32">Ações</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
@@ -49,13 +50,17 @@ const EstoqueView = {
                                 <span v-else class="text-gray-300 italic text-xs">---</span>
                             </td>
 
+                            <td class="py-2 md:py-5 px-4 md:px-6 text-right text-slate-400">
+                                <span class="font-bold">R$ {{ Number(p.custo).toFixed(2) }}</span>
+                            </td>
+
                             <td class="py-2 md:py-5 px-4 md:px-6 text-right">
                                 <span class="text-orange-600 font-bold">R$ {{ Number(p.preco_suger_ml).toFixed(2) }}</span>
                             </td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
                                 <div class="flex items-center justify-center gap-2 md:gap-3">
-                                    <button @click="abrirModal(p)" class="text-blue-400 hover:text-blue-600"><i class="fa-solid fa-pen-to-square"></i></button>
-                                    <button @click="excluir(p.id)" class="text-red-200 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button>
+                                    <button @click="abrirModal(p)" class="text-blue-400 hover:text-blue-600 transition-all"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button @click="excluir(p.id)" class="text-red-200 hover:text-red-500 transition-all"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </td>
                         </tr>
