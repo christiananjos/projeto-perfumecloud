@@ -14,13 +14,12 @@ const app = createApp({
     data() {
         return {
             session: null,
-            userRole: 'vendedor',
+            userRole: 'vendedor', 
             telaAtual: 'dashboard',
             menuAberto: false,
             produtos: [],
             vendas: [],
             feedback: { ativo: false, titulo: '', texto: '' },
-            // MENU RESTAURADO AQUI
             menu: [
                 { id: 'dashboard', label: 'Dashboard', icon: 'fa-solid fa-chart-pie' },
                 { id: 'vender', label: 'Vender', icon: 'fa-solid fa-tag' },
@@ -59,12 +58,24 @@ const app = createApp({
         },
         onLogin(session) {
             this.session = session;
-            this.userRole = session.user.app_metadata?.role || 'vendedor';
+            
+            // BUSCA DIRETA NO APP_METADATA QUE VOCÊ MOSTROU NO SCRIPT
+            const role = session.user.app_metadata?.role;
+            
+            if (role === 'admin') {
+                this.userRole = 'admin';
+            } else {
+                this.userRole = 'vendedor';
+            }
+
+            console.log("SISTEMA: Logado como", this.userRole);
             this.carregarDados();
         },
         async fazerLogout() {
             await window.supabase.auth.signOut();
             this.session = null;
+            this.userRole = 'vendedor';
+            localStorage.clear();
             location.reload();
         }
     },

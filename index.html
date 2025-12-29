@@ -54,12 +54,13 @@
             <main class="flex-1 overflow-y-auto p-4 lg:p-12 relative">
                 <div class="lg:hidden h-14"></div>
                 
-                <component 
+               <component 
                     :is="telaAtual + '-view'" 
                     :produtos="produtos" 
                     :vendas="vendas" 
-                    :kpis="kpis" 
-                    @refresh="carregarDados" 
+                    :kpis="kpis"
+                    :user-role="userRole" 
+                    @refresh="carregarDados"
                     @notificar="mostrarFeedback">
                 </component>
             </main>
