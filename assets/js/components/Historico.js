@@ -20,8 +20,8 @@ const HistoricoView = {
                         <tr>
                             <th class="py-5 px-6 w-[18%] md:w-[12%]">Data</th>
                             <th class="py-5 px-6 w-[47%] md:w-[33%]">Produto</th>
-                            <th class="py-5 px-6 hidden md:table-cell md:w-[15%]">Mercado Livre</th>
-                            <th class="py-5 px-6 hidden md:table-cell md:w-[15%] text-right text-emerald-600">Lucro</th>
+                            <th class="py-5 px-6 hidden md:table-cell md:w-[18%]">Pedido / Rastreio</th>
+                            <th class="py-5 px-6 hidden md:table-cell md:w-[12%] text-right text-emerald-600">Lucro</th>
                             <th class="py-5 px-6 text-center w-[15%] md:w-[10%]">Ações</th>
                         </tr>
                     </thead>
@@ -32,15 +32,24 @@ const HistoricoView = {
                                 <div class="flex flex-col">
                                     <span class="text-slate-700 font-bold truncate leading-tight text-[11px] md:text-sm">{{ v.nome_produto_snapshot }}</span>
                                     <div class="md:hidden flex items-center gap-2 mt-1">
-                                        <span v-if="v.ml_order_id" class="text-[8px] text-orange-600 font-black flex items-center gap-1"><i class="fa-solid fa-handshake"></i> #{{ v.ml_order_id }}</span>
-                                        <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" class="text-[8px] text-blue-500 font-bold flex items-center gap-1"><i class="fa-solid fa-truck-fast"></i> {{ v.tracking_code }}</button>
+                                        <span v-if="v.ml_order_id" class="text-[8px] text-orange-600 font-black flex items-center gap-1"><i class="fa-solid fa-handshake"></i> ML: #{{ v.ml_order_id }}</span>
+                                        <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" class="text-[8px] text-blue-500 font-bold flex items-center gap-1"><i class="fa-solid fa-truck-fast"></i> CORREIOS: {{ v.tracking_code }}</button>
                                     </div>
                                 </div>
                             </td>
-                            <td class="py-5 px-6 hidden md:table-cell"><span v-if="v.ml_order_id" class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-[10px] font-black border border-yellow-200 uppercase flex items-center w-fit gap-1.5"><i class="fa-solid fa-handshake"></i> #{{ v.ml_order_id }}</span></td>
+                            <td class="py-5 px-6 hidden md:table-cell">
+                                <div class="flex flex-col gap-1.5">
+                                    <span v-if="v.ml_order_id" class="bg-orange-50 text-orange-700 px-2 py-0.5 rounded border border-orange-100 text-[9px] font-black uppercase flex items-center w-fit gap-1">
+                                        <i class="fa-solid fa-handshake"></i> ML: #{{ v.ml_order_id }}
+                                    </span>
+                                    <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" class="text-[10px] text-blue-500 font-bold flex items-center gap-1.5 hover:text-blue-700 transition-colors w-fit">
+                                        <i class="fa-solid fa-truck-fast"></i> {{ v.tracking_code }}
+                                    </button>
+                                </div>
+                            </td>
                             <td class="py-5 px-6 hidden md:table-cell text-right text-emerald-600 font-bold">R$ {{ (v.lucro_liquido || 0).toFixed(2) }}</td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
-                                <button @click="userRole === 'admin' ? remover(v.id) : null" :class="userRole === 'admin' ? 'text-red-200' : 'text-gray-50 cursor-not-allowed'" :title="userRole === 'admin' ? 'Remover' : 'Sem permissão'"><i class="fa-solid fa-trash-can"></i></button>
+                                <button @click="userRole === 'admin' ? remover(v.id) : null" :class="userRole === 'admin' ? 'text-red-200 hover:text-red-500' : 'text-gray-50 cursor-not-allowed'" :title="userRole === 'admin' ? 'Remover' : 'Sem permissão'"><i class="fa-solid fa-trash-can"></i></button>
                             </td>
                         </tr>
                     </tbody>
