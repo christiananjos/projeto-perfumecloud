@@ -20,6 +20,7 @@ const app = createApp({
             produtos: [],
             vendas: [],
             feedback: { ativo: false, titulo: '', texto: '' },
+            // MENU RESTAURADO AQUI
             menu: [
                 { id: 'dashboard', label: 'Dashboard', icon: 'fa-solid fa-chart-pie' },
                 { id: 'vender', label: 'Vender', icon: 'fa-solid fa-tag' },
@@ -29,22 +30,12 @@ const app = createApp({
             ]
         }
     },
-    // O segredo está aqui: kpis deve ser uma computed property para ser reativa
     computed: {
         kpis() {
-            // Se as vendas ainda não carregaram, retorna valores padrão zerados
-            if (!this.vendas || this.vendas.length === 0) {
-                return { lucro: 0, faturamento: 0, qtdVendas: 0 };
-            }
-            
+            if (!this.vendas || this.vendas.length === 0) return { lucro: 0, faturamento: 0, qtdVendas: 0 };
             const lucro = this.vendas.reduce((acc, v) => acc + (Number(v.lucro_liquido) || 0), 0);
             const faturamento = this.vendas.reduce((acc, v) => acc + (Number(v.faturamento_total) || 0), 0);
-            
-            return {
-                lucro: lucro,
-                faturamento: faturamento,
-                qtdVendas: this.vendas.length
-            };
+            return { lucro, faturamento, qtdVendas: this.vendas.length };
         }
     },
     methods: {
@@ -54,13 +45,17 @@ const app = createApp({
                 this.produtos = p || [];
                 const { data: v } = await window.supabase.from('vendas').select('*').order('created_at', { ascending: false });
                 this.vendas = v || [];
-            } catch (err) { 
-                console.error("Erro ao carregar dados:", err); 
-            }
+            } catch (err) { console.error("Erro ao carregar dados:", err); }
         },
         navegar(tela) {
             this.telaAtual = tela;
             this.menuAberto = false;
+        },
+        mostrarFeedback(aviso) {
+            this.feedback.titulo = aviso.titulo;
+            this.feedback.texto = aviso.texto;
+            this.feedback.ativo = true;
+            setTimeout(() => { this.feedback.ativo = false; }, 3000);
         },
         onLogin(session) {
             this.session = session;
@@ -74,8 +69,10 @@ const app = createApp({
         }
     },
     async mounted() {
-        const { data } = await window.supabase.auth.getSession();
-        if (data.session) this.onLogin(data.session);
+        if (window.supabase) {
+            const { data } = await window.supabase.auth.getSession();
+            if (data.session) this.onLogin(data.session);
+        }
     }
 });
 
