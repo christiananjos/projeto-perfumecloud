@@ -34,37 +34,25 @@ const EstoqueView = {
                     </thead>
                     <tbody class="divide-y divide-gray-50">
                         <tr v-for="p in paginados" :key="p.id" class="hover:bg-slate-50 transition-colors">
-                            <td class="py-2 md:py-5 px-4 md:px-6">
-                                <div class="flex flex-col">
-                                    <span class="text-slate-700 font-bold truncate leading-tight">{{ p.nome }}</span>
-                                    <span v-if="p.inspiracao" class="md:hidden text-[8px] text-slate-400 font-medium truncate uppercase tracking-tighter">{{ p.inspiracao }}</span>
-                                </div>
-                            </td>
+                            <td class="py-2 md:py-5 px-4 md:px-6 font-bold text-slate-700 truncate">{{ p.nome }}</td>
                             <td class="py-5 px-6 hidden md:table-cell font-medium text-slate-500 uppercase text-[10px]">{{ p.inspiracao || '-' }}</td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-right text-slate-400 font-bold">R$ {{ Number(p.custo).toFixed(2) }}</td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-right text-orange-600 font-bold">R$ {{ Number(p.preco_suger_ml).toFixed(2) }}</td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
                                 <div class="flex items-center justify-center gap-2">
-                                    <button @click="userRole === 'admin' ? abrirModal(p) : null" 
-                                            :class="userRole === 'admin' ? 'text-blue-400 hover:text-blue-600' : 'text-gray-200 cursor-not-allowed'">
-                                        <i class="fa-solid fa-pen-to-square"></i>
-                                    </button>
-                                    <button @click="userRole === 'admin' ? excluir(p.id) : null" 
-                                            :class="userRole === 'admin' ? 'text-red-200 hover:text-red-500' : 'text-gray-100 cursor-not-allowed'">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
+                                    <button @click="userRole === 'admin' ? abrirModal(p) : null" :class="userRole === 'admin' ? 'text-blue-400' : 'text-gray-200 cursor-not-allowed'"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button @click="userRole === 'admin' ? excluir(p.id) : null" :class="userRole === 'admin' ? 'text-red-200' : 'text-gray-100 cursor-not-allowed'"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            
-            <div class="p-3 md:p-6 bg-gray-50 border-t border-gray-100 flex justify-between items-center shrink-0">
-                <span class="text-[9px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">{{ produtosFiltrados.length }} itens</span>
-                <div class="flex gap-1">
-                    <button @click="paginaAtual--" :disabled="paginaAtual === 1" class="w-8 h-8 md:w-10 md:h-10 border rounded-xl flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
-                    <button @click="paginaAtual++" :disabled="paginaAtual === totalPaginas" class="w-8 h-8 md:w-10 md:h-10 border rounded-xl flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+            <div class="p-3 bg-gray-50 border-t flex justify-between items-center shrink-0 px-6">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ produtosFiltrados.length }} itens</span>
+                <div class="flex gap-2">
+                    <button @click="paginaAtual--" :disabled="paginaAtual === 1" class="w-8 h-8 border rounded-xl flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
+                    <button @click="paginaAtual++" :disabled="paginaAtual === totalPaginas" class="w-8 h-8 border rounded-xl flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
                 </div>
             </div>
         </div>
@@ -73,51 +61,44 @@ const EstoqueView = {
             <div class="bg-white rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl animate-fade-in text-left">
                 <div class="text-center mb-6">
                     <h3 class="text-2xl font-black text-slate-900 tracking-tighter">{{ modoEdicao ? 'Ajustar Produto' : 'Novo Produto' }}</h3>
-                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Margem Sugerida: 30% + Taxa ML</p>
                 </div>
-                
                 <div class="space-y-4">
                     <div class="space-y-1">
-                        <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Nome do Produto</label>
-                        <input v-model="form.nome" type="text" class="input-soft" placeholder="Ex: Invictus 100ml">
+                        <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Nome</label>
+                        <input v-model="form.nome" type="text" class="input-soft">
                     </div>
                     <div class="space-y-1">
                         <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Inspiração</label>
-                        <input v-model="form.inspiracao" type="text" class="input-soft" placeholder="Ex: Paco Rabanne">
+                        <input v-model="form.inspiracao" type="text" class="input-soft">
                     </div>
-                    
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-1">
-                            <label class="text-[9px] font-bold text-blue-500 uppercase ml-2 italic">Preço de Custo</label>
+                            <label class="text-[9px] font-bold text-blue-500 uppercase ml-2 italic">Custo</label>
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-blue-300">R$</span>
                                 <input v-model.number="form.custo" type="number" step="0.01" @input="autoCalcularSugerido" class="input-soft !pl-10 border-blue-100 font-bold">
                             </div>
                         </div>
                         <div class="space-y-1">
-                            <label class="text-[9px] font-bold text-orange-400 uppercase ml-2 italic">Venda ML (Sugerido)</label>
+                            <label class="text-[9px] font-bold text-orange-400 uppercase ml-2 italic">Venda ML</label>
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-orange-300">R$</span>
                                 <input v-model.number="form.preco_suger_ml" type="number" step="0.01" class="input-soft !pl-10 border-orange-100 text-orange-600 font-bold">
                             </div>
                         </div>
                     </div>
-
-                    <div class="bg-slate-50 rounded-2xl p-4 border border-dashed border-slate-200 text-center">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
-                            Lucro Previsto: <span class="text-green-600">R$ {{ (form.custo * 0.30).toFixed(2) }}</span> (30%)
-                        </p>
+                    <div class="bg-slate-50 rounded-2xl p-4 border border-dashed border-slate-200 text-center text-[10px] font-bold text-slate-400 uppercase">
+                        Lucro Líquido: <span class="text-green-600">R$ {{ (form.custo * 0.3).toFixed(2) }} (30%)</span>
                     </div>
                 </div>
-
                 <div class="flex gap-4 mt-8">
-                    <button @click="fecharModal" class="flex-1 font-bold text-gray-400 uppercase text-[10px] tracking-widest">Cancelar</button>
-                    <button @click="salvar" class="flex-1 btn-primary text-xs uppercase font-black">Salvar Alterações</button>
+                    <button @click="fecharModal" class="flex-1 font-bold text-gray-400 uppercase text-[10px]">Cancelar</button>
+                    <button @click="salvar" class="flex-1 btn-primary text-xs uppercase font-black">Salvar</button>
                 </div>
             </div>
         </div>
     </div>`,
-    props: ['produtos', 'userRole'],
+    props: ['produtos', 'userRole', 'taxas'],
     data() {
         return {
             paginaAtual: 1, 
@@ -133,55 +114,34 @@ const EstoqueView = {
         produtosFiltrados() {
             if (!this.produtos) return [];
             const t = this.filtros.busca.toLowerCase();
-            return this.produtos.filter(p => {
-                const bN = p.nome.toLowerCase().includes(t) || (p.inspiracao && p.inspiracao.toLowerCase().includes(t));
-                const bP = !this.filtros.precoMax || Number(p.preco_suger_ml) <= Number(this.filtros.precoMax);
-                return bN && bP;
-            });
+            return this.produtos.filter(p => p.nome.toLowerCase().includes(t) || (p.inspiracao && p.inspiracao.toLowerCase().includes(t)));
         },
         totalPaginas() { return Math.ceil(this.produtosFiltrados.length / this.itensPorPagina) || 1; },
         paginados() { return this.produtosFiltrados.slice((this.paginaAtual - 1) * this.itensPorPagina, this.paginaAtual * this.itensPorPagina); }
     },
     methods: {
         autoCalcularSugerido() {
-            const taxaML = parseFloat(localStorage.getItem('taxaMLFixa') || 60);
-            if (this.form.custo > 0) {
-                // FÓRMULA: Custo + 30% de Lucro + Taxa Fixa ML
-                const lucroAlvo = this.form.custo * 0.30;
-                const totalSugerido = this.form.custo + lucroAlvo + taxaML;
-                this.form.preco_suger_ml = Number(totalSugerido.toFixed(2));
+            if (this.form.custo > 0 && this.taxas) {
+                const comissao = this.taxas.ml_comissao / 100;
+                const frete = this.taxas.ml_frete;
+                const custoComLucro = this.form.custo * 1.30;
+                const resultado = (custoComLucro + frete) / (1 - comissao);
+                this.form.preco_suger_ml = Number(resultado.toFixed(2));
             }
         },
         abrirModal(p = null) {
-            if (p) { 
-                if(this.userRole !== 'admin') return; 
-                this.modoEdicao = true; 
-                this.idSendoEditado = p.id; 
-                this.form = { ...p }; 
-            } else { 
-                this.modoEdicao = false; 
-                this.idSendoEditado = null; 
-                this.form = { nome: '', inspiracao: '', custo: 0, preco_suger_ml: 0 }; 
-            }
+            if (p) { this.modoEdicao = true; this.idSendoEditado = p.id; this.form = { ...p }; }
+            else { this.modoEdicao = false; this.form = { nome: '', inspiracao: '', custo: 0, preco_suger_ml: 0 }; }
             this.modal.aberto = true;
         },
         fecharModal() { this.modal.aberto = false; },
         async salvar() {
-            if(!this.form.nome) return;
-            const payload = { ...this.form }; 
-            delete payload.id;
+            const payload = { ...this.form }; delete payload.id;
             if (this.modoEdicao) await window.supabase.from('produtos').update(payload).eq('id', this.idSendoEditado);
             else await window.supabase.from('produtos').insert([payload]);
-            this.$emit('refresh'); 
-            this.fecharModal();
-            this.$emit('notificar', { titulo: 'Sucesso', texto: 'Dados atualizados.' });
+            this.$emit('refresh'); this.fecharModal();
         },
-        async excluir(id) { 
-            if (confirm("Deseja realmente excluir este item?")) { 
-                await window.supabase.from('produtos').delete().eq('id', id); 
-                this.$emit('refresh'); 
-            } 
-        }
+        async excluir(id) { if (confirm("Excluir?")) { await window.supabase.from('produtos').delete().eq('id', id); this.$emit('refresh'); } }
     }
 };
 

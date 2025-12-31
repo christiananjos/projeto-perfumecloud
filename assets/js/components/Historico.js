@@ -30,34 +30,33 @@ const HistoricoView = {
                             <td class="py-2 md:py-5 px-4 md:px-6 text-[10px] md:text-xs text-gray-400">{{ new Date(v.created_at).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}) }}</td>
                             <td class="py-2 md:py-5 px-4 md:px-6">
                                 <div class="flex flex-col">
-                                    <span class="text-slate-700 font-bold truncate leading-tight text-[11px] md:text-sm">{{ v.nome_produto_snapshot }}</span>
-                                    <div class="md:hidden flex items-center gap-2 mt-1">
-                                        <span v-if="v.ml_order_id" class="text-[8px] text-orange-600 font-black flex items-center gap-1"><i class="fa-solid fa-handshake"></i> ML: #{{ v.ml_order_id }}</span>
-                                        <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" class="text-[8px] text-blue-500 font-bold flex items-center gap-1"><i class="fa-solid fa-truck-fast"></i> CORREIOS: {{ v.tracking_code }}</button>
+                                    <span class="text-slate-700 font-bold truncate text-[11px] md:text-sm">{{ v.nome_produto_snapshot }}</span>
+                                    <div class="md:hidden flex flex-col gap-1 mt-1">
+                                        <span v-if="v.ml_order_id" class="text-[8px] text-orange-600 font-black italic">#{{ v.ml_order_id }}</span>
+                                        <span v-if="v.tracking_code" class="text-[8px] text-blue-500 font-bold tracking-tight uppercase">{{ v.tracking_code }}</span>
                                     </div>
                                 </div>
                             </td>
                             <td class="py-5 px-6 hidden md:table-cell">
-                                <div class="flex flex-col gap-1.5">
-                                    <span v-if="v.ml_order_id" class="bg-orange-50 text-orange-700 px-2 py-0.5 rounded border border-orange-100 text-[9px] font-black uppercase flex items-center w-fit gap-1">
-                                        <i class="fa-solid fa-handshake"></i> ML: #{{ v.ml_order_id }}
-                                    </span>
-                                    <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" class="text-[10px] text-blue-500 font-bold flex items-center gap-1.5 hover:text-blue-700 transition-colors w-fit">
-                                        <i class="fa-solid fa-truck-fast"></i> {{ v.tracking_code }}
-                                    </button>
+                                <div class="flex flex-col gap-1">
+                                    <span v-if="v.ml_order_id" class="bg-orange-50 text-orange-700 px-2 py-0.5 rounded text-[9px] font-black w-fit uppercase border border-orange-100">#{{ v.ml_order_id }}</span>
+                                    <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" class="text-[10px] text-blue-500 font-bold flex items-center gap-1 hover:text-blue-700"><i class="fa-solid fa-truck-fast"></i> {{ v.tracking_code }}</button>
                                 </div>
                             </td>
                             <td class="py-5 px-6 hidden md:table-cell text-right text-emerald-600 font-bold">R$ {{ (v.lucro_liquido || 0).toFixed(2) }}</td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
-                                <button @click="userRole === 'admin' ? remover(v.id) : null" :class="userRole === 'admin' ? 'text-red-200 hover:text-red-500' : 'text-gray-50 cursor-not-allowed'" :title="userRole === 'admin' ? 'Remover' : 'Sem permissão'"><i class="fa-solid fa-trash-can"></i></button>
+                                <button @click="userRole === 'admin' ? remover(v.id) : null" :class="userRole === 'admin' ? 'text-red-200 hover:text-red-500' : 'text-gray-50 cursor-not-allowed'"><i class="fa-solid fa-trash-can"></i></button>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center shrink-0">
+            <div class="p-4 bg-gray-50 border-t flex justify-between items-center">
                 <span class="text-[9px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">{{ paginaAtual }}/{{ totalPaginas }}</span>
-                <div class="flex gap-2"><button @click="paginaAtual--" :disabled="paginaAtual === 1" class="w-8 h-8 border rounded-xl flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-chevron-left text-xs"></i></button><button @click="paginaAtual++" :disabled="paginaAtual === totalPaginas" class="w-8 h-8 border rounded-xl flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-chevron-right text-xs"></i></button></div>
+                <div class="flex gap-2">
+                    <button @click="paginaAtual--" :disabled="paginaAtual === 1" class="w-8 h-8 border rounded-xl flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                    <button @click="paginaAtual++" :disabled="paginaAtual === totalPaginas" class="w-8 h-8 border rounded-xl flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                </div>
             </div>
         </div>
     </div>`,
@@ -66,14 +65,14 @@ const HistoricoView = {
     computed: {
         vendasFiltradas() {
             const t = this.busca.toLowerCase();
-            return this.vendas.filter(v => (v.nome_produto_snapshot || "").toLowerCase().includes(t) || (v.ml_order_id || "").toLowerCase().includes(t) || (v.tracking_code || "").toLowerCase().includes(t));
+            return this.vendas.filter(v => (v.nome_produto_snapshot || "").toLowerCase().includes(t) || (v.ml_order_id || "").toLowerCase().includes(t));
         },
         totalPaginas() { return Math.ceil(this.vendasFiltradas.length / this.itensPorPagina) || 1; },
         paginados() { return this.vendasFiltradas.slice((this.paginaAtual - 1) * this.itensPorPagina, this.paginaAtual * this.itensPorPagina); }
     },
     methods: {
-        copiarCodigo(c) { navigator.clipboard.writeText(c); this.$emit('notificar', { titulo: 'Copiado!', texto: 'Código copiado.' }); },
-        async remover(id) { if(confirm("Excluir venda?")) { await window.supabase.from('vendas').delete().eq('id', id); this.$emit('refresh'); } }
+        copiarCodigo(c) { navigator.clipboard.writeText(c); this.$emit('notificar', { titulo: 'Copiado!', texto: 'Código de rastreio copiado.' }); },
+        async remover(id) { if(confirm("Excluir?")) { await window.supabase.from('vendas').delete().eq('id', id); this.$emit('refresh'); } }
     }
 };
 

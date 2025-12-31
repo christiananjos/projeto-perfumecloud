@@ -56,13 +56,13 @@
                 
                <component 
                     :is="telaAtual + '-view'" 
+                    :user-role="userRole" 
                     :produtos="produtos" 
                     :vendas="vendas" 
-                    :kpis="kpis"
-                    :user-role="userRole" 
-                    @refresh="carregarDados"
+                    :taxas="taxas"
+                    @refresh="carregarDados" 
                     @notificar="mostrarFeedback">
-                </component>
+               </component>
             </main>
         </div>
 

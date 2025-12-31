@@ -8,17 +8,16 @@ import ConfiguracoesView from './components/Configuracoes.js';
 const { createApp } = Vue;
 
 const app = createApp({
-    components: {
-        LoginView, DashboardView, VenderView, EstoqueView, HistoricoView, ConfiguracoesView
-    },
+    components: { LoginView, DashboardView, VenderView, EstoqueView, HistoricoView, ConfiguracoesView },
     data() {
         return {
             session: null,
-            userRole: 'vendedor', 
+            userRole: 'vendedor',
             telaAtual: 'dashboard',
             menuAberto: false,
             produtos: [],
             vendas: [],
+            taxas: { ml_comissao: 12, ml_frete: 22.45 },
             feedback: { ativo: false, titulo: '', texto: '' },
             menu: [
                 { id: 'dashboard', label: 'Dashboard', icon: 'fa-solid fa-chart-pie' },
@@ -29,14 +28,6 @@ const app = createApp({
             ]
         }
     },
-    computed: {
-        kpis() {
-            if (!this.vendas || this.vendas.length === 0) return { lucro: 0, faturamento: 0, qtdVendas: 0 };
-            const lucro = this.vendas.reduce((acc, v) => acc + (Number(v.lucro_liquido) || 0), 0);
-            const faturamento = this.vendas.reduce((acc, v) => acc + (Number(v.faturamento_total) || 0), 0);
-            return { lucro, faturamento, qtdVendas: this.vendas.length };
-        }
-    },
     methods: {
         async carregarDados() {
             try {
@@ -44,47 +35,23 @@ const app = createApp({
                 this.produtos = p || [];
                 const { data: v } = await window.supabase.from('vendas').select('*').order('created_at', { ascending: false });
                 this.vendas = v || [];
-            } catch (err) { console.error("Erro ao carregar dados:", err); }
+                const { data: t } = await window.supabase.from('configuracoes').select('chave, valor');
+                if (t) {
+                    this.taxas = t.reduce((acc, i) => ({ ...acc, [i.chave]: Number(i.valor) }), {});
+                }
+            } catch (err) { console.error(err); }
         },
-        navegar(tela) {
-            this.telaAtual = tela;
-            this.menuAberto = false;
-        },
-        mostrarFeedback(aviso) {
-            this.feedback.titulo = aviso.titulo;
-            this.feedback.texto = aviso.texto;
-            this.feedback.ativo = true;
-            setTimeout(() => { this.feedback.ativo = false; }, 3000);
-        },
-        onLogin(session) {
-            this.session = session;
-            
-            // BUSCA DIRETA NO APP_METADATA QUE VOCÊ MOSTROU NO SCRIPT
-            const role = session.user.app_metadata?.role;
-            
-            if (role === 'admin') {
-                this.userRole = 'admin';
-            } else {
-                this.userRole = 'vendedor';
-            }
-
-            console.log("SISTEMA: Logado como", this.userRole);
-            this.carregarDados();
-        },
-        async fazerLogout() {
-            await window.supabase.auth.signOut();
-            this.session = null;
-            this.userRole = 'vendedor';
-            localStorage.clear();
-            location.reload();
+        navegar(t) { this.telaAtual = t; this.menuAberto = false; },
+        mostrarFeedback(a) { this.feedback = { ativo: true, titulo: a.titulo, texto: a.texto }; setTimeout(() => this.feedback.ativo = false, 3000); },
+        onLogin(s) { 
+            this.session = s; 
+            this.userRole = s.user.app_metadata?.role || 'vendedor'; 
+            this.carregarDados(); 
         }
     },
     async mounted() {
-        if (window.supabase) {
-            const { data } = await window.supabase.auth.getSession();
-            if (data.session) this.onLogin(data.session);
-        }
+        const { data } = await window.supabase.auth.getSession();
+        if (data.session) this.onLogin(data.session);
     }
 });
-
 app.mount('#app');
