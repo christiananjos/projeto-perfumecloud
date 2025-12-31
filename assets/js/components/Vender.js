@@ -63,7 +63,7 @@ const VenderView = {
             </div>
         </div>
     </div>`,
-    props: ['produtos'],
+    props: ['produtos', 'taxas'], // Adicionado prop taxas
     data() {
         return {
             form: { produtoId: '', quantidade: 1, precoUnitario: 0, mlOrderId: '', trackingCode: '' }
@@ -76,19 +76,28 @@ const VenderView = {
         },
         async salvar() {
             const p = this.produtos.find(i => i.id === this.form.produtoId);
-            const taxaSalva = localStorage.getItem('taxaMLFixa');
-            const valorTaxaFixa = taxaSalva ? parseFloat(taxaSalva) : 60.00;
+            
+            // Nova regra de negócio usando as taxas globais do banco
+            const comissaoPercent = this.taxas?.ml_comissao || 12;
+            const freteFixo = this.taxas?.ml_frete || 22.45;
 
             const faturamentoTotal = Number(this.form.precoUnitario * this.form.quantidade);
-            const lucroTotal = (Number(this.form.precoUnitario) - Number(p.custo) - valorTaxaFixa) * this.form.quantidade;
+            
+            // Cálculo do Lucro Líquido: 
+            // Faturamento - Custos dos Produtos - Comissão ML (sobre o total) - Frete (por unidade)
+            const valorComissao = faturamentoTotal * (comissaoPercent / 100);
+            const valorFreteTotal = freteFixo * this.form.quantidade;
+            const custoProdutosTotal = Number(p.custo) * this.form.quantidade;
+
+            const lucroTotal = faturamentoTotal - custoProdutosTotal - valorComissao - valorFreteTotal;
 
             const dadosParaSalvar = {
                 produto_id: this.form.produtoId,
                 nome_produto_snapshot: p.nome,
                 quantidade: this.form.quantidade,
-                preco_venda_unitario: this.form.precoUnitario, // ADICIONADO PARA CORRIGIR O ERRO 400
+                preco_venda_unitario: this.form.precoUnitario,
                 faturamento_total: faturamentoTotal,
-                lucro_liquido: lucroTotal,
+                lucro_liquido: Number(lucroTotal.toFixed(2)),
                 ml_order_id: this.form.mlOrderId || null,
                 tracking_code: this.form.trackingCode ? this.form.trackingCode.toUpperCase() : null
             };
@@ -96,7 +105,7 @@ const VenderView = {
             const { error } = await window.supabase.from('vendas').insert([dadosParaSalvar]);
 
             if(!error) {
-                this.$emit('notificar', { titulo: 'Sucesso!', texto: 'Venda salva.' });
+                this.$emit('notificar', { titulo: 'Sucesso!', texto: 'Venda registrada com lucro calculado.' });
                 this.form = { produtoId: '', quantidade: 1, precoUnitario: 0, mlOrderId: '', trackingCode: '' };
                 this.$emit('refresh');
             } else {

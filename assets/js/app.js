@@ -28,6 +28,26 @@ const app = createApp({
             ]
         }
     },
+    // BLOCO COMPUTED RESTAURADO
+    computed: {
+        kpis() {
+            if (!this.vendas || this.vendas.length === 0) {
+                return { lucro: 0, faturamento: 0, qtdVendas: 0 };
+            }
+            
+            // Soma o lucro real registrado em cada venda
+            const lucroTotal = this.vendas.reduce((acc, v) => acc + Number(v.lucro_liquido || 0), 0);
+            
+            // Soma o faturamento total registrado em cada venda
+            const faturamentoTotal = this.vendas.reduce((acc, v) => acc + Number(v.faturamento_total || 0), 0);
+            
+            return {
+                lucro: lucroTotal,
+                faturamento: faturamentoTotal,
+                qtdVendas: this.vendas.length
+            };
+        }
+    },
     methods: {
         async carregarDados() {
             try {
@@ -42,7 +62,10 @@ const app = createApp({
             } catch (err) { console.error(err); }
         },
         navegar(t) { this.telaAtual = t; this.menuAberto = false; },
-        mostrarFeedback(a) { this.feedback = { ativo: true, titulo: a.titulo, texto: a.texto }; setTimeout(() => this.feedback.ativo = false, 3000); },
+        mostrarFeedback(a) { 
+            this.feedback = { ativo: true, titulo: a.titulo, texto: a.texto }; 
+            setTimeout(() => this.feedback.ativo = false, 3000); 
+        },
         onLogin(s) { 
             this.session = s; 
             this.userRole = s.user.app_metadata?.role || 'vendedor'; 
@@ -54,4 +77,5 @@ const app = createApp({
         if (data.session) this.onLogin(data.session);
     }
 });
+
 app.mount('#app');
