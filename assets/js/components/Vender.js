@@ -1,8 +1,8 @@
 const VenderView = {
-    template: `
+  template: `
     <div class="flex flex-col items-center justify-center min-h-[85vh] md:min-h-[70vh] animate-fade-in px-4">
         <div class="w-full max-w-lg bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-6 md:p-10 space-y-6 md:space-y-8">
-            <div class="text-center space-y-1">
+            <div class="text-center space-y-1 text-left">
                 <h2 class="text-2xl md:text-3xl font-black tracking-tighter text-slate-900 leading-none">Venda Rápida</h2>
                 <p class="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Registro de Saída</p>
             </div>
@@ -47,6 +47,17 @@ const VenderView = {
                     </div>
                 </div>
 
+                <div v-if="form.produtoId" class="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100 flex justify-between items-center animate-fade-in">
+                    <div class="text-left">
+                        <p class="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Lucro Estimado</p>
+                        <p class="text-lg font-black text-emerald-700 leading-none">R$ {{ calcularLucroPreview() }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Margem Aplicada</p>
+                        <p class="text-xs font-bold text-slate-600">{{ getMargemProduto() }}%</p>
+                    </div>
+                </div>
+
                 <div class="text-center py-4 md:py-6 bg-slate-50 rounded-[2rem] border border-slate-100 relative overflow-hidden">
                     <label class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest relative z-10 font-black">Faturamento Total</label>
                     <div class="flex items-center justify-center gap-2 font-bold text-slate-900 relative z-10">
@@ -63,57 +74,86 @@ const VenderView = {
             </div>
         </div>
     </div>`,
-    props: ['produtos', 'taxas'], // Adicionado prop taxas
-    data() {
-        return {
-            form: { produtoId: '', quantidade: 1, precoUnitario: 0, mlOrderId: '', trackingCode: '' }
-        }
+  props: ["produtos", "taxas"],
+  data() {
+    return {
+      form: {
+        produtoId: "",
+        quantidade: 1,
+        precoUnitario: 0,
+        mlOrderId: "",
+        trackingCode: "",
+      },
+    };
+  },
+  methods: {
+    preencherDados() {
+      const p = this.produtos.find((i) => i.id === this.form.produtoId);
+      if (p) this.form.precoUnitario = p.preco_suger_ml;
     },
-    methods: {
-        preencherDados() {
-            const p = this.produtos.find(i => i.id === this.form.produtoId);
-            if(p) this.form.precoUnitario = p.preco_suger_ml;
-        },
-        async salvar() {
-            const p = this.produtos.find(i => i.id === this.form.produtoId);
-            
-            // Nova regra de negócio usando as taxas globais do banco
-            const comissaoPercent = this.taxas?.ml_comissao || 12;
-            const freteFixo = this.taxas?.ml_frete || 22.45;
+    getMargemProduto() {
+      const p = this.produtos.find((i) => i.id === this.form.produtoId);
+      return p ? p.margem || 30 : 0;
+    },
+    calcularLucroPreview() {
+      const p = this.produtos.find((i) => i.id === this.form.produtoId);
+      if (!p || !this.taxas) return "0.00";
 
-            const faturamentoTotal = Number(this.form.precoUnitario * this.form.quantidade);
-            
-            // Cálculo do Lucro Líquido: 
-            // Faturamento - Custos dos Produtos - Comissão ML (sobre o total) - Frete (por unidade)
-            const valorComissao = faturamentoTotal * (comissaoPercent / 100);
-            const valorFreteTotal = freteFixo * this.form.quantidade;
-            const custoProdutosTotal = Number(p.custo) * this.form.quantidade;
+      const faturamentoTotal = this.form.precoUnitario * this.form.quantidade;
+      const taxaML = faturamentoTotal * (this.taxas.ml_comissao / 100);
+      const freteTotal = this.taxas.ml_frete * this.form.quantidade;
+      const custoTotal = p.custo * this.form.quantidade;
 
-            const lucroTotal = faturamentoTotal - custoProdutosTotal - valorComissao - valorFreteTotal;
+      const lucro = faturamentoTotal - custoTotal - taxaML - freteTotal;
+      return lucro.toFixed(2);
+    },
+    async salvar() {
+      const p = this.produtos.find((i) => i.id === this.form.produtoId);
+      const faturamentoTotal = Number(
+        this.form.precoUnitario * this.form.quantidade
+      );
 
-            const dadosParaSalvar = {
-                produto_id: this.form.produtoId,
-                nome_produto_snapshot: p.nome,
-                quantidade: this.form.quantidade,
-                preco_venda_unitario: this.form.precoUnitario,
-                faturamento_total: faturamentoTotal,
-                lucro_liquido: Number(lucroTotal.toFixed(2)),
-                ml_order_id: this.form.mlOrderId || null,
-                tracking_code: this.form.trackingCode ? this.form.trackingCode.toUpperCase() : null
-            };
+      // Cálculo do Lucro baseado nas taxas globais e custo do produto
+      const taxaML = faturamentoTotal * (this.taxas.ml_comissao / 100);
+      const freteTotal = this.taxas.ml_frete * this.form.quantidade;
+      const custoTotal = p.custo * this.form.quantidade;
+      const lucroTotal = faturamentoTotal - custoTotal - taxaML - freteTotal;
 
-            const { error } = await window.supabase.from('vendas').insert([dadosParaSalvar]);
+      const dadosParaSalvar = {
+        produto_id: this.form.produtoId,
+        nome_produto_snapshot: p.nome,
+        quantidade: this.form.quantidade,
+        preco_venda_unitario: this.form.precoUnitario,
+        faturamento_total: faturamentoTotal,
+        lucro_liquido: Number(lucroTotal.toFixed(2)),
+        ml_order_id: this.form.mlOrderId || null,
+        tracking_code: this.form.trackingCode
+          ? this.form.trackingCode.toUpperCase()
+          : null,
+      };
 
-            if(!error) {
-                this.$emit('notificar', { titulo: 'Sucesso!', texto: 'Venda registrada com lucro calculado.' });
-                this.form = { produtoId: '', quantidade: 1, precoUnitario: 0, mlOrderId: '', trackingCode: '' };
-                this.$emit('refresh');
-            } else {
-                console.error(error);
-                alert("Erro ao salvar: " + error.message);
-            }
-        }
-    }
+      const { error } = await window.supabase
+        .from("vendas")
+        .insert([dadosParaSalvar]);
+
+      if (!error) {
+        this.$emit("notificar", {
+          titulo: "Sucesso!",
+          texto: "Venda registrada.",
+        });
+        this.form = {
+          produtoId: "",
+          quantidade: 1,
+          precoUnitario: 0,
+          mlOrderId: "",
+          trackingCode: "",
+        };
+        this.$emit("refresh");
+      } else {
+        alert("Erro ao salvar venda.");
+      }
+    },
+  },
 };
 
 export default VenderView;
