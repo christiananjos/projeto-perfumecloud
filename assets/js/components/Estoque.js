@@ -1,5 +1,5 @@
 const EstoqueView = {
-    template: `
+  template: `
     <div class="animate-fade-in flex flex-col mx-auto w-full md:max-w-6xl h-[92vh] md:h-auto space-y-3 md:space-y-8 pt-2">
         
         <div class="flex justify-between items-center px-4 shrink-0">
@@ -98,51 +98,83 @@ const EstoqueView = {
             </div>
         </div>
     </div>`,
-    props: ['produtos', 'userRole', 'taxas'],
-    data() {
-        return {
-            paginaAtual: 1, 
-            itensPorPagina: window.innerWidth < 768 ? 6 : 10,
-            filtros: { busca: '', precoMax: null }, 
-            modal: { aberto: false },
-            modoEdicao: false, 
-            idSendoEditado: null,
-            form: { nome: '', inspiracao: '', custo: 0, preco_suger_ml: 0 }
-        }
+  props: ["produtos", "userRole", "taxas"],
+  data() {
+    return {
+      paginaAtual: 1,
+      itensPorPagina: window.innerWidth < 768 ? 6 : 10,
+      filtros: { busca: "", precoMax: null },
+      modal: { aberto: false },
+      modoEdicao: false,
+      idSendoEditado: null,
+      form: { nome: "", inspiracao: "", custo: 0, preco_suger_ml: 0 },
+    };
+  },
+  computed: {
+    produtosFiltrados() {
+      if (!this.produtos) return [];
+      const t = this.filtros.busca.toLowerCase();
+      return this.produtos.filter(
+        (p) =>
+          p.nome.toLowerCase().includes(t) ||
+          (p.inspiracao && p.inspiracao.toLowerCase().includes(t))
+      );
     },
-    computed: {
-        produtosFiltrados() {
-            if (!this.produtos) return [];
-            const t = this.filtros.busca.toLowerCase();
-            return this.produtos.filter(p => p.nome.toLowerCase().includes(t) || (p.inspiracao && p.inspiracao.toLowerCase().includes(t)));
-        },
-        totalPaginas() { return Math.ceil(this.produtosFiltrados.length / this.itensPorPagina) || 1; },
-        paginados() { return this.produtosFiltrados.slice((this.paginaAtual - 1) * this.itensPorPagina, this.paginaAtual * this.itensPorPagina); }
+    totalPaginas() {
+      return (
+        Math.ceil(this.produtosFiltrados.length / this.itensPorPagina) || 1
+      );
     },
-    methods: {
-        autoCalcularSugerido() {
-            if (this.form.custo > 0 && this.taxas) {
-                const comissao = this.taxas.ml_comissao / 100;
-                const frete = this.taxas.ml_frete;
-                const custoComLucro = this.form.custo * 1.30;
-                const resultado = (custoComLucro + frete) / (1 - comissao);
-                this.form.preco_suger_ml = Number(resultado.toFixed(2));
-            }
-        },
-        abrirModal(p = null) {
-            if (p) { this.modoEdicao = true; this.idSendoEditado = p.id; this.form = { ...p }; }
-            else { this.modoEdicao = false; this.form = { nome: '', inspiracao: '', custo: 0, preco_suger_ml: 0 }; }
-            this.modal.aberto = true;
-        },
-        fecharModal() { this.modal.aberto = false; },
-        async salvar() {
-            const payload = { ...this.form }; delete payload.id;
-            if (this.modoEdicao) await window.supabase.from('produtos').update(payload).eq('id', this.idSendoEditado);
-            else await window.supabase.from('produtos').insert([payload]);
-            this.$emit('refresh'); this.fecharModal();
-        },
-        async excluir(id) { if (confirm("Excluir?")) { await window.supabase.from('produtos').delete().eq('id', id); this.$emit('refresh'); } }
-    }
+    paginados() {
+      return this.produtosFiltrados.slice(
+        (this.paginaAtual - 1) * this.itensPorPagina,
+        this.paginaAtual * this.itensPorPagina
+      );
+    },
+  },
+  methods: {
+    autoCalcularSugerido() {
+      if (this.form.custo > 0 && this.taxas) {
+        const comissao = this.taxas.ml_comissao / 100;
+        const frete = this.taxas.ml_frete;
+        const custoComLucro = this.form.custo * 1.3;
+        const resultado = (custoComLucro + frete) / (1 - comissao);
+        this.form.preco_suger_ml = Number(resultado.toFixed(2));
+      }
+    },
+    abrirModal(p = null) {
+      if (p) {
+        this.modoEdicao = true;
+        this.idSendoEditado = p.id;
+        this.form = { ...p };
+      } else {
+        this.modoEdicao = false;
+        this.form = { nome: "", inspiracao: "", custo: 0, preco_suger_ml: 0 };
+      }
+      this.modal.aberto = true;
+    },
+    fecharModal() {
+      this.modal.aberto = false;
+    },
+    async salvar() {
+      const payload = { ...this.form };
+      delete payload.id;
+      if (this.modoEdicao)
+        await window.supabase
+          .from("produtos")
+          .update(payload)
+          .eq("id", this.idSendoEditado);
+      else await window.supabase.from("produtos").insert([payload]);
+      this.$emit("refresh");
+      this.fecharModal();
+    },
+    async excluir(id) {
+      if (confirm("Excluir?")) {
+        await window.supabase.from("produtos").delete().eq("id", id);
+        this.$emit("refresh");
+      }
+    },
+  },
 };
 
 export default EstoqueView;
