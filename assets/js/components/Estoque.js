@@ -57,7 +57,10 @@ const EstoqueView = {
             </div>
             
             <div class="p-3 md:p-6 bg-gray-50 border-t border-gray-100 flex justify-between items-center shrink-0">
-                <span class="text-[9px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">{{ produtosFiltrados.length }} itens</span>
+                <div class="flex flex-col text-left">
+                   <span class="text-[9px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">{{ produtosFiltrados.length }} itens</span>
+                   <span class="text-[8px] md:text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Página {{ paginaAtual }} de {{ totalPaginas }}</span>
+                </div>
                 <div class="flex gap-1">
                     <button @click="paginaAtual--" :disabled="paginaAtual === 1" class="w-8 h-8 md:w-10 md:h-10 border rounded-xl flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
                     <button @click="paginaAtual++" :disabled="paginaAtual === totalPaginas" class="w-8 h-8 md:w-10 md:h-10 border rounded-xl flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
@@ -72,28 +75,28 @@ const EstoqueView = {
                 </div>
                 
                 <div class="space-y-4">
-                    <div class="space-y-1">
+                    <div class="space-y-1 text-left">
                         <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Nome do Perfume</label>
                         <input v-model="form.nome" type="text" class="input-soft">
                     </div>
 
-                    <div class="space-y-1">
+                    <div class="space-y-1 text-left">
                         <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Inspiração</label>
                         <input v-model="form.inspiracao" type="text" class="input-soft">
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1">
+                        <div class="space-y-1 text-left">
                             <label class="text-[9px] font-bold text-blue-500 uppercase ml-2 italic">Custo (R$)</label>
                             <input v-model.number="form.custo" type="number" step="0.01" @input="autoCalcularSugerido" class="input-soft font-bold">
                         </div>
-                        <div class="space-y-1">
+                        <div class="space-y-1 text-left">
                             <label class="text-[9px] font-bold text-emerald-500 uppercase ml-2 italic">Margem (%)</label>
                             <input v-model.number="form.margem" type="number" @input="autoCalcularSugerido" class="input-soft font-bold !text-emerald-600">
                         </div>
                     </div>
 
-                    <div class="space-y-1">
+                    <div class="space-y-1 text-left">
                         <label class="text-[9px] font-bold text-orange-400 uppercase ml-2 italic">Venda Sugerida ML</label>
                         <div class="relative">
                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-orange-300">R$</span>
