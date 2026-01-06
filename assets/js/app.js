@@ -40,6 +40,9 @@ const app = createApp({
       ],
     };
   },
+  created() {
+    this.erro = ""; // Garante que inicia sem erro ao deslogar
+  },
   // BLOCO COMPUTED RESTAURADO
   computed: {
     kpis() {
@@ -107,19 +110,14 @@ const app = createApp({
     },
     async fazerLogout() {
       try {
-        const { error } = await window.supabase.auth.signOut();
-
-        if (error) throw error;
-
-        // 2. Limpa o estado local para voltar à tela de login
+        await window.supabase.auth.signOut();
+        // Apenas limpe a sessão.
+        // A LoginView cuidará de mostrar a mensagem ao ser carregada.
         this.session = null;
         this.userRole = null;
-
-        // Opcional: Feedback visual
-        this.mostrarFeedback("Até logo!", "Sessão encerrada com sucesso");
       } catch (error) {
-        console.error("Erro ao sair:", error.message);
-        alert("Erro ao tentar deslogar");
+        console.error("Erro ao sair", error);
+        this.session = null;
       }
     },
   },

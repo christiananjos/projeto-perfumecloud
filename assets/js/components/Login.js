@@ -13,17 +13,22 @@ const LoginView = {
             <div class="space-y-4">
                 <div class="space-y-1 text-left">
                     <label class="text-[10px] font-bold text-gray-400 uppercase ml-4 font-black">Usuário</label>
-                    <input v-model="username" @input="erro = ''" type="text" class="input-soft" :class="{'border-red-400': erro}">
+                    <input v-model="username" @input="erro = ''; info = ''" type="text" class="input-soft" :class="{'border-red-400': erro}">
                 </div>
                 
                 <div class="space-y-1 text-left">
                     <label class="text-[10px] font-bold text-gray-400 uppercase ml-4 font-black">Senha</label>
-                    <input v-model="password" @input="erro = ''" type="password" class="input-soft" :class="{'border-red-400': erro}" @keyup.enter="entrar">
+                    <input v-model="password" @input="erro = ''; info = ''" type="password" class="input-soft" :class="{'border-red-400': erro}" @keyup.enter="entrar">
                 </div>
 
                 <div v-if="erro" class="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-2xl flex items-center gap-3 animate-shake">
                     <i class="fa-solid fa-circle-exclamation text-sm"></i>
                     <span class="text-xs font-bold uppercase tracking-tight">{{ erro }}</span>
+                </div>
+
+                <div v-if="info" class="bg-blue-50 border border-blue-100 text-blue-600 px-4 py-3 rounded-2xl flex items-center gap-3 animate-fade-in">
+                    <i class="fa-solid fa-circle-info text-sm"></i>
+                    <span class="text-xs font-bold uppercase tracking-tight">{{ info }}</span>
                 </div>
             </div>
 
@@ -38,19 +43,32 @@ const LoginView = {
       username: "",
       password: "",
       carregando: false,
-      erro: "", // Nova variável para a mensagem
+      erro: "",
+      info: "", // Nova variável para mensagens informativas
       SUFIXO: "@meusistema.com",
     };
+  },
+  mounted() {
+    // Quando o componente carrega, verificamos se viemos de um logout
+    // Se a sessão for nula e não houver erro, mostramos a mensagem
+    this.info = "Usuário desconectado";
+
+    // Remove a mensagem automaticamente após 5 segundos
+    setTimeout(() => {
+      this.info = "";
+    }, 5000);
   },
   methods: {
     async entrar() {
       if (!this.username || !this.password) {
+        this.info = "";
         this.erro = "Preencha todos os campos";
         return;
       }
 
       this.carregando = true;
-      this.erro = ""; // Limpa erro anterior
+      this.erro = "";
+      this.info = "";
       const emailFake = this.username.trim().toLowerCase() + this.SUFIXO;
 
       try {
