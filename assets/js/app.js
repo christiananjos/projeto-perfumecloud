@@ -105,6 +105,23 @@ const app = createApp({
       this.userRole = s.user.app_metadata?.role || "vendedor";
       this.carregarDados();
     },
+    async fazerLogout() {
+      try {
+        const { error } = await window.supabase.auth.signOut();
+
+        if (error) throw error;
+
+        // 2. Limpa o estado local para voltar à tela de login
+        this.session = null;
+        this.userRole = null;
+
+        // Opcional: Feedback visual
+        this.mostrarFeedback("Até logo!", "Sessão encerrada com sucesso");
+      } catch (error) {
+        console.error("Erro ao sair:", error.message);
+        alert("Erro ao tentar deslogar");
+      }
+    },
   },
   async mounted() {
     const { data } = await window.supabase.auth.getSession();
