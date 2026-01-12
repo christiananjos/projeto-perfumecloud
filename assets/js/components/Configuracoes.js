@@ -1,7 +1,6 @@
 const ConfiguracoesView = {
   template: `
     <div class="animate-fade-in flex flex-col mx-auto w-full md:max-w-4xl h-[92vh] md:h-auto space-y-6 pt-2 px-4">
-        
         <div class="flex flex-col shrink-0 text-left">
             <h2 class="text-xl md:text-2xl font-black tracking-tighter text-slate-900">Ajustes do Sistema</h2>
             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Gerencie as taxas globais de venda</p>
@@ -9,7 +8,6 @@ const ConfiguracoesView = {
 
         <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 md:p-10 space-y-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-                
                 <div class="space-y-3 text-left">
                     <div class="flex items-center gap-2 ml-2">
                         <i class="fa-solid fa-percent text-orange-400 text-[10px]"></i>
@@ -60,9 +58,7 @@ const ConfiguracoesView = {
     </div>`,
   props: ["userRole", "taxas"],
   data() {
-    return {
-      localTaxas: { ...this.taxas },
-    };
+    return { localTaxas: { ...this.taxas } };
   },
   methods: {
     async salvarNoBanco() {
@@ -76,7 +72,6 @@ const ConfiguracoesView = {
           .from("configuracoes")
           .update({ valor: this.localTaxas.ml_frete })
           .eq("chave", "ml_frete");
-
         this.$emit("notificar", {
           titulo: "Sucesso!",
           texto: "Configurações atualizadas.",
@@ -84,7 +79,6 @@ const ConfiguracoesView = {
         this.$emit("refresh");
       } catch (err) {
         console.error(err);
-        alert("Erro ao salvar no banco.");
       }
     },
   },
@@ -97,5 +91,4 @@ const ConfiguracoesView = {
     },
   },
 };
-
 export default ConfiguracoesView;

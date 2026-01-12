@@ -35,33 +35,22 @@ const app = createApp({
           icon: "fa-solid fa-clock-rotate-left",
         },
         { id: "estoque", label: "Estoque", icon: "fa-solid fa-box-archive" },
-
         { id: "configuracoes", label: "Ajustes", icon: "fa-solid fa-gear" },
       ],
     };
   },
-  created() {
-    this.erro = ""; // Garante que inicia sem erro ao deslogar
-  },
-  // BLOCO COMPUTED RESTAURADO
   computed: {
     kpis() {
-      if (!this.vendas || this.vendas.length === 0) {
+      if (!this.vendas || this.vendas.length === 0)
         return { lucro: 0, faturamento: 0, qtdVendas: 0 };
-      }
-
-      // Soma o lucro real registrado em cada venda
       const lucroTotal = this.vendas.reduce(
         (acc, v) => acc + Number(v.lucro_liquido || 0),
         0
       );
-
-      // Soma o faturamento total registrado em cada venda
       const faturamentoTotal = this.vendas.reduce(
         (acc, v) => acc + Number(v.faturamento_total || 0),
         0
       );
-
       return {
         lucro: lucroTotal,
         faturamento: faturamentoTotal,
@@ -72,27 +61,38 @@ const app = createApp({
   methods: {
     async carregarDados() {
       try {
-        const { data: p } = await window.supabase
-          .from("produtos")
-          .select("*")
-          .order("nome");
-        this.produtos = p || [];
-        const { data: v } = await window.supabase
-          .from("vendas")
-          .select("*")
-          .order("created_at", { ascending: false });
-        this.vendas = v || [];
+        // 1. Busca as configurações de taxas
         const { data: t } = await window.supabase
           .from("configuracoes")
           .select("chave, valor");
+
         if (t) {
-          this.taxas = t.reduce(
+          const mapaTaxas = t.reduce(
             (acc, i) => ({ ...acc, [i.chave]: Number(i.valor) }),
             {}
           );
+          this.taxas = mapaTaxas;
         }
+
+        // 2. BUSCA OS PRODUTOS (A parte que estava faltando)
+        const { data: p, error: errorP } = await window.supabase
+          .from("produtos")
+          .select("*")
+          .order("nome");
+
+        if (errorP) throw errorP;
+        this.produtos = p || [];
+
+        // 3. BUSCA AS VENDAS
+        const { data: v, error: errorV } = await window.supabase
+          .from("vendas")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (errorV) throw errorV;
+        this.vendas = v || [];
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao carregar dados:", err);
       }
     },
     navegar(t) {
@@ -111,10 +111,11 @@ const app = createApp({
     async fazerLogout() {
       try {
         await window.supabase.auth.signOut();
-        // Apenas limpe a sessão.
-        // A LoginView cuidará de mostrar a mensagem ao ser carregada.
         this.session = null;
-        this.userRole = null;
+        this.userRole = "vendedor";
+        this.telaAtual = "dashboard";
+        this.produtos = [];
+        this.vendas = [];
       } catch (error) {
         console.error("Erro ao sair", error);
         this.session = null;

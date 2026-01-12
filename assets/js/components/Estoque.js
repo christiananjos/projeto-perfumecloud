@@ -1,7 +1,6 @@
 const EstoqueView = {
   template: `
     <div class="animate-fade-in flex flex-col mx-auto w-full md:max-w-6xl h-[92vh] md:h-auto space-y-3 md:space-y-8 pt-2">
-        
         <div class="flex justify-between items-center px-4 shrink-0">
             <h2 class="text-xl md:text-3xl font-bold tracking-tighter text-slate-900 leading-none">Gestão de Estoque</h2>
             <button @click="abrirModal()" class="btn-primary uppercase text-[9px] md:text-xs tracking-widest font-bold px-4 py-2 md:py-4">
@@ -22,7 +21,12 @@ const EstoqueView = {
 
         <div class="bg-white rounded-[1.5rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col flex-1 mx-2 md:mx-0 mb-2">
             <div class="flex-1 overflow-x-auto">
-                <table class="w-full text-left font-semibold text-xs md:text-sm table-fixed min-w-full">
+                <div v-if="produtos.length === 0" class="p-20 text-center text-gray-400">
+                   <i class="fa-solid fa-box-open text-4xl mb-4 block"></i>
+                   Nenhum produto encontrado.
+                </div>
+
+                <table v-else class="w-full text-left font-semibold text-xs md:text-sm table-fixed min-w-full">
                     <thead class="bg-gray-50 text-[9px] md:text-[10px] font-bold uppercase text-gray-400 border-b">
                         <tr>
                             <th class="py-3 md:py-5 px-4 md:px-6 w-[40%] md:w-[35%]">Produto</th>
@@ -43,8 +47,8 @@ const EstoqueView = {
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
                                 <span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-[10px] font-black">{{ p.margem || 30 }}%</span>
                             </td>
-                            <td class="py-2 md:py-5 px-4 md:px-6 text-right text-slate-400 font-bold">R$ {{ Number(p.custo).toFixed(2) }}</td>
-                            <td class="py-2 md:py-5 px-4 md:px-6 text-right text-orange-600 font-bold">R$ {{ Number(p.preco_suger_ml).toFixed(2) }}</td>
+                            <td class="py-2 md:py-5 px-4 md:px-6 text-right text-slate-400 font-bold">R$ {{ Number(p.custo || 0).toFixed(2) }}</td>
+                            <td class="py-2 md:py-5 px-4 md:px-6 text-right text-orange-600 font-bold">R$ {{ calcularSugeridoDinamico(p) }}</td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center text-slate-300">
                                 <div class="flex items-center justify-center gap-2">
                                     <button @click="userRole === 'admin' ? abrirModal(p) : null" :class="userRole === 'admin' ? 'text-blue-400 hover:text-blue-600' : 'text-gray-200 cursor-not-allowed'"><i class="fa-solid fa-pen-to-square"></i></button>
@@ -79,12 +83,10 @@ const EstoqueView = {
                         <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Nome do Perfume</label>
                         <input v-model="form.nome" type="text" class="input-soft">
                     </div>
-
                     <div class="space-y-1 text-left">
                         <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Inspiração</label>
                         <input v-model="form.inspiracao" type="text" class="input-soft">
                     </div>
-                    
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-1 text-left">
                             <label class="text-[9px] font-bold text-blue-500 uppercase ml-2 italic">Custo (R$)</label>
@@ -95,7 +97,6 @@ const EstoqueView = {
                             <input v-model.number="form.margem" type="number" @input="autoCalcularSugerido" class="input-soft font-bold !text-emerald-600">
                         </div>
                     </div>
-
                     <div class="space-y-1 text-left">
                         <label class="text-[9px] font-bold text-orange-400 uppercase ml-2 italic">Venda Sugerida ML</label>
                         <div class="relative">
@@ -103,15 +104,13 @@ const EstoqueView = {
                             <input v-model.number="form.preco_suger_ml" type="number" step="0.01" class="input-soft !pl-10 border-orange-100 text-orange-600 font-bold">
                         </div>
                     </div>
-
                     <div class="bg-slate-50 rounded-2xl p-4 border border-dashed border-slate-200">
                         <div class="flex justify-between text-[9px] text-gray-500 font-bold uppercase">
-                            <span>Seu Lucro: <b class="text-emerald-600">R$ {{ (form.custo * (form.margem/100)).toFixed(2) }}</b></span>
-                            <span>Taxas ML: <b class="text-red-400">R$ {{ (form.preco_suger_ml * (taxas.ml_comissao/100)).toFixed(2) }}</b></span>
+                            <span>Seu Lucro: <b class="text-emerald-600">R$ {{ (Number(form.custo || 0) * (Number(form.margem || 0)/100)).toFixed(2) }}</b></span>
+                            <span>Taxas ML: <b class="text-red-400">R$ {{ (Number(form.preco_suger_ml || 0) * (Number(taxas.ml_comissao || 0)/100)).toFixed(2) }}</b></span>
                         </div>
                     </div>
                 </div>
-
                 <div class="flex gap-4 mt-8">
                     <button @click="fecharModal" class="flex-1 font-bold text-gray-400 uppercase text-[10px]">Cancelar</button>
                     <button @click="salvar" class="flex-1 btn-primary text-xs uppercase font-black">Salvar</button>
@@ -139,11 +138,11 @@ const EstoqueView = {
   },
   computed: {
     produtosFiltrados() {
-      if (!this.produtos) return [];
+      if (!this.produtos || !Array.isArray(this.produtos)) return [];
       const t = this.filtros.busca.toLowerCase();
       return this.produtos.filter(
         (p) =>
-          p.nome.toLowerCase().includes(t) ||
+          (p.nome && p.nome.toLowerCase().includes(t)) ||
           (p.inspiracao && p.inspiracao.toLowerCase().includes(t))
       );
     },
@@ -160,15 +159,24 @@ const EstoqueView = {
     },
   },
   methods: {
-    autoCalcularSugerido() {
-      if (this.form.custo > 0 && this.taxas) {
-        const comissao = this.taxas.ml_comissao / 100;
-        const frete = this.taxas.ml_frete;
-        const margemDesejada = 1 + this.form.margem / 100;
+    calcularSugeridoDinamico(p) {
+      if (!this.taxas) return "0.00";
+      const comissaoML = (Number(this.taxas.ml_comissao) || 0) / 100;
+      const freteML = parseFloat(this.taxas.ml_frete) || 0;
+      const custoProd = parseFloat(p.custo) || 0;
+      const margemLucro = 1 + parseFloat(p.margem || 30) / 100;
 
-        const custoComLucro = this.form.custo * margemDesejada;
-        const resultado = (custoComLucro + frete) / (1 - comissao);
-        this.form.preco_suger_ml = Number(resultado.toFixed(2));
+      const numerador = custoProd * margemLucro + freteML;
+      const denominador = 1 - comissaoML;
+      const resultado = numerador / denominador;
+
+      return resultado.toFixed(2);
+    },
+    autoCalcularSugerido() {
+      if (this.form.custo > 0) {
+        this.form.preco_suger_ml = Number(
+          this.calcularSugeridoDinamico(this.form)
+        );
       }
     },
     abrirModal(p = null) {
@@ -194,12 +202,14 @@ const EstoqueView = {
     async salvar() {
       const payload = { ...this.form };
       delete payload.id;
+      // IMPORTANTE: Use o nome correto da tabela aqui ("produtos" ou "perfumes")
       if (this.modoEdicao)
         await window.supabase
           .from("produtos")
           .update(payload)
           .eq("id", this.idSendoEditado);
       else await window.supabase.from("produtos").insert([payload]);
+
       this.$emit("refresh");
       this.fecharModal();
     },
@@ -211,5 +221,4 @@ const EstoqueView = {
     },
   },
 };
-
 export default EstoqueView;
