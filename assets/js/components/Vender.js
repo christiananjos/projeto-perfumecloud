@@ -22,10 +22,10 @@ const VenderView = {
                         <input v-model.number="form.quantidade" type="number" min="1" class="input-soft !py-3 md:!py-4 text-center font-bold">
                     </div>
                     <div class="space-y-1 text-left">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-4 block h-4">Preço Unitário</label>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-4 block h-4">Recebido (ML)</label>
                         <div class="relative">
                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 italic">R$</span>
-                            <input v-model.number="form.precoUnitario" type="number" step="0.01" class="input-soft !pl-10 !py-3 md:!py-4 font-bold">
+                            <input v-model.number="form.precoRecebido" type="number" step="0.01" class="input-soft !pl-10 !py-3 md:!py-4 font-bold border-orange-100" placeholder="Valor líquido">
                         </div>
                     </div>
                 </div>
@@ -49,20 +49,20 @@ const VenderView = {
 
                 <div v-if="form.produtoId" class="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100 flex justify-between items-center animate-fade-in">
                     <div class="text-left">
-                        <p class="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Lucro Estimado</p>
-                        <p class="text-lg font-black text-emerald-700 leading-none">R$ {{ calcularLucroPreview() }}</p>
+                        <p class="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Lucro Real (Líquido)</p>
+                        <p class="text-lg font-black text-emerald-700 leading-none">R$ {{ calcularLucroSimples() }}</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Margem Aplicada</p>
-                        <p class="text-xs font-bold text-slate-600">{{ getMargemProduto() }}%</p>
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Custo Unitário</p>
+                        <p class="text-xs font-bold text-slate-600">R$ {{ getCustoProduto() }}</p>
                     </div>
                 </div>
 
                 <div class="text-center py-4 md:py-6 bg-slate-50 rounded-[2rem] border border-slate-100 relative overflow-hidden">
-                    <label class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest relative z-10 font-black">Faturamento Total</label>
+                    <label class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest relative z-10 font-black">Total Recebido</label>
                     <div class="flex items-center justify-center gap-2 font-bold text-slate-900 relative z-10">
                         <span class="text-xl md:text-2xl italic text-slate-300">R$</span>
-                        <span class="text-4xl md:text-5xl tracking-tighter">{{ (form.precoUnitario * form.quantidade).toFixed(2) }}</span>
+                        <span class="text-4xl md:text-5xl tracking-tighter">{{ (form.precoRecebido * form.quantidade).toFixed(2) }}</span>
                     </div>
                     <i class="fa-solid fa-coins absolute -right-4 -bottom-4 text-slate-200/40 text-6xl md:text-7xl rotate-12"></i>
                 </div>
@@ -80,7 +80,7 @@ const VenderView = {
       form: {
         produtoId: "",
         quantidade: 1,
-        precoUnitario: 0,
+        precoRecebido: 0,
         mlOrderId: "",
         trackingCode: "",
       },
@@ -89,47 +89,38 @@ const VenderView = {
   methods: {
     preencherDados() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
-      if (p) this.form.precoUnitario = p.preco_suger_ml;
+      // Aqui podemos deixar zerado para você preencher manualmente o que o ML te passar, 
+      // ou sugerir o preço_suger_ml se quiser ter uma base.
+      if (p) this.form.precoRecebido = 0;
     },
-    getMargemProduto() {
+    getCustoProduto() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
-      return p ? p.margem || 30 : 0;
+      return p ? Number(p.custo).toFixed(2) : "0.00";
     },
-    calcularLucroPreview() {
+    calcularLucroSimples() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
-      if (!p || !this.taxas) return "0.00";
+      if (!p) return "0.00";
 
-      const faturamentoTotal = this.form.precoUnitario * this.form.quantidade;
-      const taxaML = faturamentoTotal * (this.taxas.ml_comissao / 100);
-      const freteTotal = this.taxas.ml_frete * this.form.quantidade;
-      const custoTotal = p.custo * this.form.quantidade;
+      const custoTotal = Number(p.custo) * this.form.quantidade;
+      const recebidoTotal = this.form.precoRecebido * this.form.quantidade;
 
-      const lucro = faturamentoTotal - custoTotal - taxaML - freteTotal;
+      const lucro = recebidoTotal - custoTotal;
       return lucro.toFixed(2);
     },
     async salvar() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
-      const faturamentoTotal = Number(
-        this.form.precoUnitario * this.form.quantidade
-      );
-
-      // Cálculo do Lucro baseado nas taxas globais e custo do produto
-      const taxaML = faturamentoTotal * (this.taxas.ml_comissao / 100);
-      const freteTotal = this.taxas.ml_frete * this.form.quantidade;
-      const custoTotal = p.custo * this.form.quantidade;
-      const lucroTotal = faturamentoTotal - custoTotal - taxaML - freteTotal;
+      const totalRecebido = Number(this.form.precoRecebido * this.form.quantidade);
+      const lucroTotal = Number(this.calcularLucroSimples());
 
       const dadosParaSalvar = {
         produto_id: this.form.produtoId,
         nome_produto_snapshot: p.nome,
         quantidade: this.form.quantidade,
-        preco_venda_unitario: this.form.precoUnitario,
-        faturamento_total: faturamentoTotal,
-        lucro_liquido: Number(lucroTotal.toFixed(2)),
+        preco_venda_unitario: this.form.precoRecebido, // Salvamos o valor líquido recebido
+        faturamento_total: totalRecebido,
+        lucro_liquido: lucroTotal,
         ml_order_id: this.form.mlOrderId || null,
-        tracking_code: this.form.trackingCode
-          ? this.form.trackingCode.toUpperCase()
-          : null,
+        tracking_code: this.form.trackingCode ? this.form.trackingCode.toUpperCase() : null,
       };
 
       const { error } = await window.supabase
@@ -139,12 +130,12 @@ const VenderView = {
       if (!error) {
         this.$emit("notificar", {
           titulo: "Sucesso!",
-          texto: "Venda registrada.",
+          texto: "Venda registrada com lucro de R$ " + lucroTotal.toFixed(2),
         });
         this.form = {
           produtoId: "",
           quantidade: 1,
-          precoUnitario: 0,
+          precoRecebido: 0,
           mlOrderId: "",
           trackingCode: "",
         };
