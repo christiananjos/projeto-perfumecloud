@@ -21,7 +21,7 @@ const DashboardView = {
                 <canvas id="pieChart"></canvas>
             </div>
             <div class="flex-1 w-full space-y-3 text-left">
-                <h3 class="font-bold text-lg mb-4 text-slate-900">Top 5 Perfumes (Lucro)</h3>
+                <h3 class="font-bold text-lg mb-4 text-slate-900">Top 5 mais vendidos (Lucro)</h3>
                 <div v-for="(item, idx) in topCinco" :key="idx" 
                      class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <span class="font-semibold text-slate-600 text-sm">{{ item.nome }}</span>
