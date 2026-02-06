@@ -121,7 +121,9 @@ const VenderView = {
     },
     async salvar() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
-      const totalRecebido = Number(this.form.precoRecebido * this.form.quantidade);
+      const totalRecebido = Number(
+        this.form.precoRecebido * this.form.quantidade,
+      );
       const lucroTotal = Number(this.calcularLucroSimples());
 
       const dadosParaSalvar = {
@@ -132,10 +134,14 @@ const VenderView = {
         faturamento_total: totalRecebido,
         lucro_liquido: lucroTotal,
         ml_order_id: this.form.mlOrderId || null,
-        tracking_code: this.form.trackingCode ? this.form.trackingCode.toUpperCase() : null,
+        tracking_code: this.form.trackingCode
+          ? this.form.trackingCode.toUpperCase()
+          : null,
       };
 
-      const { error } = await window.supabase.from("vendas").insert([dadosParaSalvar]);
+      const { error } = await window.supabase
+        .from("vendas")
+        .insert([dadosParaSalvar]);
 
       if (!error) {
         this.$emit("notificar", {
@@ -144,7 +150,13 @@ const VenderView = {
         });
         // Reset completo
         this.inputBusca = "";
-        this.form = { produtoId: "", quantidade: 1, precoRecebido: 0, mlOrderId: "", trackingCode: "" };
+        this.form = {
+          produtoId: "",
+          quantidade: 1,
+          precoRecebido: 0,
+          mlOrderId: "",
+          trackingCode: "",
+        };
         this.$emit("refresh");
       } else {
         alert("Erro ao salvar venda.");
@@ -154,3 +166,5 @@ const VenderView = {
 };
 
 export default VenderView;
+
+//teste
