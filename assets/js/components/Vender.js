@@ -9,11 +9,20 @@ const VenderView = {
             
             <div class="space-y-4 md:space-y-6">
                 <div class="space-y-1 text-left">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-4">Selecione o Perfume</label>
-                    <select v-model="form.produtoId" class="input-soft !text-sm" @change="preencherDados">
-                        <option value="" disabled>Escolha um item do estoque...</option>
-                        <option v-for="p in produtos" :key="p.id" :value="p.id">{{ p.nome }}</option>
-                    </select>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-4">Buscar Perfume (Digite o nome)</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                        <input 
+                            list="lista-perfumes" 
+                            v-model="inputBusca" 
+                            @input="aoSelecionarPeloNome"
+                            placeholder="Digite para filtrar..." 
+                            class="input-soft !pl-10 !text-sm"
+                        >
+                        <datalist id="lista-perfumes">
+                            <option v-for="p in produtos" :key="p.id" :value="p.nome"></option>
+                        </datalist>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 md:gap-4 items-end">
@@ -77,6 +86,7 @@ const VenderView = {
   props: ["produtos", "taxas"],
   data() {
     return {
+      inputBusca: "", // Campo auxiliar para a busca por texto
       form: {
         produtoId: "",
         quantidade: 1,
@@ -87,11 +97,16 @@ const VenderView = {
     };
   },
   methods: {
-    preencherDados() {
-      const p = this.produtos.find((i) => i.id === this.form.produtoId);
-      // Aqui podemos deixar zerado para você preencher manualmente o que o ML te passar, 
-      // ou sugerir o preço_suger_ml se quiser ter uma base.
-      if (p) this.form.precoRecebido = 0;
+    // Quando o usuário digita ou escolhe um nome na lista
+    aoSelecionarPeloNome() {
+      const p = this.produtos.find((i) => i.nome === this.inputBusca);
+      if (p) {
+        this.form.produtoId = p.id;
+        // Opcional: zerar o preço recebido para forçar novo preenchimento
+        this.form.precoRecebido = 0;
+      } else {
+        this.form.produtoId = "";
+      }
     },
     getCustoProduto() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
@@ -100,12 +115,9 @@ const VenderView = {
     calcularLucroSimples() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
       if (!p) return "0.00";
-
       const custoTotal = Number(p.custo) * this.form.quantidade;
       const recebidoTotal = this.form.precoRecebido * this.form.quantidade;
-
-      const lucro = recebidoTotal - custoTotal;
-      return lucro.toFixed(2);
+      return (recebidoTotal - custoTotal).toFixed(2);
     },
     async salvar() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
@@ -116,29 +128,23 @@ const VenderView = {
         produto_id: this.form.produtoId,
         nome_produto_snapshot: p.nome,
         quantidade: this.form.quantidade,
-        preco_venda_unitario: this.form.precoRecebido, // Salvamos o valor líquido recebido
+        preco_venda_unitario: this.form.precoRecebido,
         faturamento_total: totalRecebido,
         lucro_liquido: lucroTotal,
         ml_order_id: this.form.mlOrderId || null,
         tracking_code: this.form.trackingCode ? this.form.trackingCode.toUpperCase() : null,
       };
 
-      const { error } = await window.supabase
-        .from("vendas")
-        .insert([dadosParaSalvar]);
+      const { error } = await window.supabase.from("vendas").insert([dadosParaSalvar]);
 
       if (!error) {
         this.$emit("notificar", {
           titulo: "Sucesso!",
-          texto: "Venda registrada com lucro de R$ " + lucroTotal.toFixed(2),
+          texto: "Venda registrada.",
         });
-        this.form = {
-          produtoId: "",
-          quantidade: 1,
-          precoRecebido: 0,
-          mlOrderId: "",
-          trackingCode: "",
-        };
+        // Reset completo
+        this.inputBusca = "";
+        this.form = { produtoId: "", quantidade: 1, precoRecebido: 0, mlOrderId: "", trackingCode: "" };
         this.$emit("refresh");
       } else {
         alert("Erro ao salvar venda.");
