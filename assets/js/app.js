@@ -4,6 +4,7 @@ import VenderView from "./components/Vender.js";
 import EstoqueView from "./components/Estoque.js";
 import HistoricoView from "./components/Historico.js";
 import ConfiguracoesView from "./components/Configuracoes.js";
+import AnaliseView from "./components/AnaliseView.js";
 
 const { createApp } = Vue;
 
@@ -15,6 +16,7 @@ const app = createApp({
     EstoqueView,
     HistoricoView,
     ConfiguracoesView,
+    AnaliseView,
   },
   data() {
     return {
@@ -35,6 +37,11 @@ const app = createApp({
           icon: "fa-solid fa-clock-rotate-left",
         },
         { id: "estoque", label: "Estoque", icon: "fa-solid fa-box-archive" },
+        {
+          id: "analise",
+          label: "Scanner ML",
+          icon: "fa-solid fa-magnifying-glass-chart",
+        },
         { id: "configuracoes", label: "Ajustes", icon: "fa-solid fa-gear" },
       ],
     };
@@ -45,11 +52,11 @@ const app = createApp({
         return { lucro: 0, faturamento: 0, qtdVendas: 0 };
       const lucroTotal = this.vendas.reduce(
         (acc, v) => acc + Number(v.lucro_liquido || 0),
-        0
+        0,
       );
       const faturamentoTotal = this.vendas.reduce(
         (acc, v) => acc + Number(v.faturamento_total || 0),
-        0
+        0,
       );
       return {
         lucro: lucroTotal,
@@ -69,7 +76,7 @@ const app = createApp({
         if (t) {
           const mapaTaxas = t.reduce(
             (acc, i) => ({ ...acc, [i.chave]: Number(i.valor) }),
-            {}
+            {},
           );
           this.taxas = mapaTaxas;
         }
