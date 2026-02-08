@@ -17,33 +17,30 @@ serve(async (req) => {
     })
 
     const htmlRaw = await response.text()
+    // Limpeza de escape para facilitar a busca de texto simples
+    const clean = htmlRaw.replace(/\\"/g, '"');
+
+    // Buscamos os campos de erro que você mencionou
+    const isCbt = clean.includes('"is_cbt_fulfillment_cn":true');
+    const isPrescription = clean.includes('"is_prescription_required":true');
+    const isOutOfCoverage = clean.includes('"is_out_of_coverage":true');
     
-    // LIMPEZA: Remove as barras invertidas que o ML coloca no JSON do script
-    const htmlClean = htmlRaw.replace(/\\"/g, '"').replace(/\\\//g, '/');
-
-    // 1. EXTRAÇÃO DE TAGS (Busca o array literal ["tag1","tag2"])
-    const tagsMatch = htmlClean.match(/"tags"\s*:\s*\[(.*?)\]/);
-    let tagsFinais: string[] = [];
-    if (tagsMatch && tagsMatch[1]) {
-      tagsFinais = tagsMatch[1].replace(/"/g, '').split(',').map(t => t.trim());
-    }
-
-    // 2. EXTRAÇÃO DE REPUTAÇÃO E STATUS LÍDER
-    const reputacao = htmlClean.match(/"reputation_level"\s*:\s*"(.*?)"/)?.[1] || "5_green";
-    const medalha = htmlClean.match(/"power_seller_status"\s*:\s*"(.*?)"/)?.[1] || "none";
-
-    // 3. VERIFICAÇÃO DE DESCRIÇÃO RICA (Dinâmica)
-    const hasEnhanced = htmlClean.includes('"has_full_enhanced_descriptions":true');
+    // Captura da Reputação e Medalha (isso costuma vir mais fácil)
+    const reputation = clean.match(/"reputation_level":"(.*?)"/)?.[1] || "5_green";
+    const medalha = clean.match(/"power_seller_status":"(.*?)"/)?.[1] || "none";
 
     return new Response(
       JSON.stringify({
         success: true,
-        tags: tagsFinais,
-        reputation_level: reputacao,
+        reputation_level: reputation,
         power_seller_status: medalha,
-        has_full_enhanced_descriptions: hasEnhanced,
-        // Enviamos o bloco bruto para o seu teste manual
-        debug_raw: htmlClean.substring(htmlClean.indexOf('initialState'), htmlClean.indexOf('initialState') + 2000)
+        errors: {
+          is_cbt: isCbt,
+          is_prescription: isPrescription,
+          out_of_coverage: isOutOfCoverage
+        },
+        // Enviamos um trecho do HTML para você ver no console o que está chegando
+        html_preview: clean.substring(0, 1000) 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
