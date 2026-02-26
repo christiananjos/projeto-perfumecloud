@@ -227,14 +227,29 @@ const EstoqueView = {
       this.modal.aberto = false;
     },
     async salvar() {
-      const payload = { ...this.form };
-      delete payload.id;
-      if (this.modoEdicao)
+      // Criamos o payload mapeando os nomes internos do formulário
+      // para os nomes reais das colunas no seu banco de dados
+      const payload = {
+        nome: this.form.nome,
+        inspiracao: this.form.inspiracao,
+        custo: this.form.custo,
+        preco_suger_ml: this.form.preco_suger_ml,
+        margem: this.form.margem,
+        // MAPEAMENTO CORRETO AQUI:
+        mktp_taxa_override: this.form.taxa_ml,
+        mktp_frete_override: this.form.frete_fixo,
+        ativo: true,
+      };
+
+      if (this.modoEdicao) {
         await window.supabase
           .from("produtos")
           .update(payload)
           .eq("id", this.idSendoEditado);
-      else await window.supabase.from("produtos").insert([payload]);
+      } else {
+        await window.supabase.from("produtos").insert([payload]);
+      }
+
       this.$emit("refresh");
       this.fecharModal();
     },
