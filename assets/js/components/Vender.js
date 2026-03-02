@@ -9,14 +9,14 @@ const VenderView = {
             
             <div class="space-y-4 md:space-y-6">
                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-4">Produto (Digite o nome)</label>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-4">Produto</label>
                     <div class="relative">
                         <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
                         <input 
                             list="lista-vender" 
                             v-model="inputBusca" 
                             @input="aoSelecionarPeloNome"
-                            placeholder="Digite para filtrar..." 
+                            placeholder="Selecione o produto..." 
                             class="input-soft !pl-10 !text-sm"
                         >
                         <datalist id="lista-vender">
@@ -31,29 +31,29 @@ const VenderView = {
                         <input v-model.number="form.quantidade" type="number" min="1" class="input-soft !py-3 md:!py-4 text-center font-bold">
                     </div>
                     <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-4 block h-4">Venda Bruta (ML)</label>
+                        <label class="text-[10px] font-bold text-orange-600 uppercase ml-4 block h-4 font-black italic">Entrada Líquida ML</label>
                         <div class="relative">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 italic">R$</span>
-                            <input v-model.number="form.precoRecebido" type="number" step="0.01" class="input-soft !pl-10 !py-3 md:!py-4 font-bold border-orange-100">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-orange-300 italic">R$</span>
+                            <input v-model.number="form.precoRecebido" type="number" step="0.01" class="input-soft !pl-10 !py-3 md:!py-4 font-bold border-orange-200">
                         </div>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                    <div class="space-y-1 text-orange-400">
-                        <label class="text-[10px] font-bold uppercase ml-4">Pedido ML</label>
-                        <input v-model="form.mlOrderId" type="text" placeholder="ID do Pedido" class="input-soft !py-3 md:!py-4 bg-orange-50/10">
+                    <div class="space-y-1 text-slate-400">
+                        <label class="text-[10px] font-bold uppercase ml-4 tracking-widest">ID do Pedido</label>
+                        <input v-model="form.mlOrderId" type="text" placeholder="Opcional" class="input-soft !py-3 md:!py-4">
                     </div>
-                    <div class="space-y-1 text-blue-400">
-                        <label class="text-[10px] font-bold uppercase ml-4">Correios</label>
-                        <input v-model="form.trackingCode" type="text" placeholder="RASTREIO" class="input-soft !py-3 md:!py-4 bg-blue-50/10 uppercase">
+                    <div class="space-y-1 text-slate-400">
+                        <label class="text-[10px] font-bold uppercase ml-4 tracking-widest">Rastreio</label>
+                        <input v-model="form.trackingCode" type="text" placeholder="Opcional" class="input-soft !py-3 md:!py-4 uppercase">
                     </div>
                 </div>
 
-                <div v-if="form.produtoId" class="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100 flex justify-between items-center animate-fade-in">
+                <div v-if="form.produtoId" class="bg-emerald-50/80 rounded-2xl p-5 border border-emerald-100 flex justify-between items-center animate-fade-in shadow-sm">
                     <div>
-                        <p class="text-[8px] font-black text-emerald-600 uppercase tracking-widest leading-none">Lucro Líquido Real</p>
-                        <p class="text-xl font-black text-emerald-700 mt-1">R$ {{ calcularLucroSimples() }}</p>
+                        <p class="text-[8px] font-black text-emerald-600 uppercase tracking-widest leading-none">Lucro Real (Entrada - Custo)</p>
+                        <p class="text-2xl font-black text-emerald-700 mt-1">R$ {{ calcularLucroSimples() }}</p>
                     </div>
                     <div class="text-right">
                         <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Custo Unitário</p>
@@ -62,12 +62,12 @@ const VenderView = {
                 </div>
 
                 <div class="text-center py-4 md:py-6 bg-slate-50 rounded-[2rem] border border-slate-100 relative overflow-hidden">
-                    <label class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest relative z-10 font-black">Total da Transação</label>
+                    <label class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest relative z-10 font-black">Total a Cair na Conta</label>
                     <div class="flex items-center justify-center gap-2 font-bold text-slate-900 relative z-10">
                         <span class="text-xl md:text-2xl italic text-slate-300">R$</span>
                         <span class="text-4xl md:text-5xl tracking-tighter">{{ (form.precoRecebido * form.quantidade).toFixed(2) }}</span>
                     </div>
-                    <i class="fa-solid fa-coins absolute -right-4 -bottom-4 text-slate-200/40 text-6xl md:text-7xl rotate-12"></i>
+                    <i class="fa-solid fa-money-bill-trend-up absolute -right-4 -bottom-4 text-slate-200/40 text-6xl md:text-7xl rotate-12"></i>
                 </div>
 
                 <button @click="salvar" :disabled="!form.produtoId || form.quantidade < 1" 
@@ -77,7 +77,7 @@ const VenderView = {
             </div>
         </div>
     </div>`,
-  props: ["produtos", "taxas"],
+  props: ["produtos"],
   data() {
     return {
       inputBusca: "",
@@ -95,23 +95,8 @@ const VenderView = {
       const p = this.produtos.find((i) => i.nome === this.inputBusca);
       if (p) {
         this.form.produtoId = p.id;
-
-        // CÁLCULO DO PREÇO DE VENDA SUGERIDO (Markup para Lucro Líquido Desejado)
-        // Fórmula: (Custo * (1 + Margem%) + Frete) / (1 - TaxaML%)
-        const custo = Number(p.custo);
-        const margemDesejada = (Number(p.margem) || 10) / 100; // Agora usando os 10% do seu SQL
-        const taxaML =
-          (Number(p.mktp_taxa_override) || this.taxas.ml_comissao) / 100;
-        const freteML = Number(
-          p.mktp_frete_override !== null
-            ? p.mktp_frete_override
-            : this.taxas.ml_frete,
-        );
-
-        const numerador = custo * (1 + margemDesejada) + freteML;
-        const denominador = 1 - taxaML;
-
-        this.form.precoRecebido = (numerador / denominador).toFixed(2);
+        // Sugere o valor sugerido apenas como ponto de partida, mas deixa você editar livremente
+        this.form.precoRecebido = p.preco_suger_ml || 0;
       } else {
         this.form.produtoId = "";
       }
@@ -124,23 +109,12 @@ const VenderView = {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
       if (!p) return "0.00";
 
-      const precoVendaBruto = Number(this.form.precoRecebido);
+      // LÓGICA SOLICITADA: Valor que o ML deu (Entrada Líquida) menos o Custo.
+      const entradaML = Number(this.form.precoRecebido);
       const custoUnitario = Number(p.custo);
-      const taxaML =
-        (Number(p.mktp_taxa_override) || this.taxas.ml_comissao) / 100;
-      const freteML = Number(
-        p.mktp_frete_override !== null
-          ? p.mktp_frete_override
-          : this.taxas.ml_frete,
-      );
+      const lucroUnitario = entradaML - custoUnitario;
 
-      // CÁLCULO FINANCEIRO REAL:
-      // Lucro = Venda - (Venda * %Taxa) - Frete - Custo
-      const descontoComissao = precoVendaBruto * taxaML;
-      const lucroLiquidoUnitario =
-        precoVendaBruto - descontoComissao - freteML - custoUnitario;
-
-      return (lucroLiquidoUnitario * this.form.quantidade).toFixed(2);
+      return (lucroUnitario * this.form.quantidade).toFixed(2);
     },
     async salvar() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
@@ -154,9 +128,9 @@ const VenderView = {
           produto_id: this.form.produtoId,
           nome_produto_snapshot: p.nome,
           quantidade: this.form.quantidade,
-          preco_venda_unitario: this.form.precoRecebido,
+          preco_venda_unitario: this.form.precoRecebido, // Aqui salva o valor líquido que você digitou
           faturamento_total: faturamentoTotal,
-          lucro_liquido: lucroTotal,
+          lucro_liquido: lucroTotal, // Salva a diferença exata
           ml_order_id: this.form.mlOrderId || null,
           tracking_code: this.form.trackingCode
             ? this.form.trackingCode.toUpperCase()
@@ -167,7 +141,7 @@ const VenderView = {
       if (!error) {
         this.$emit("notificar", {
           titulo: "Sucesso!",
-          texto: "Venda registrada com lucro real.",
+          texto: "Venda registrada com sucesso.",
         });
         this.inputBusca = "";
         this.form = {
