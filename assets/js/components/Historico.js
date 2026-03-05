@@ -34,9 +34,10 @@ const HistoricoView = {
                             <td class="py-2 md:py-5 px-4 md:px-6">
                                 <div class="flex flex-col text-left">
                                     <span class="text-slate-700 font-black truncate text-[11px] md:text-sm uppercase tracking-tighter">{{ v.nome_produto_snapshot }}</span>
-                                    <div class="md:hidden flex flex-col gap-1 mt-1 font-bold">
-                                        <span v-if="v.ml_order_id" class="text-[8px] text-orange-600 italic">#{{ v.ml_order_id }}</span>
-                                        <span v-if="v.tracking_code" class="text-[8px] text-blue-500 tracking-tight uppercase">{{ v.tracking_code }}</span>
+                                    <div class="md:hidden flex flex-col gap-1 mt-1 font-bold text-[8px]">
+                                        <span v-if="v.ml_order_id" class="text-orange-600 italic">#{{ v.ml_order_id }}</span>
+                                        <span v-if="v.tracking_code" class="text-blue-500 tracking-tight uppercase">{{ v.tracking_code }}</span>
+                                        <span class="text-emerald-600 font-black mt-1">LUCRO: R$ {{ (v.lucro_liquido || 0).toFixed(2) }}</span>
                                     </div>
                                 </div>
                             </td>
@@ -70,25 +71,31 @@ const HistoricoView = {
         <div v-if="editModal.aberto" class="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl animate-fade-in text-left">
                 <div class="text-center mb-6">
-                    <h3 class="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Editar Venda</h3>
+                    <h3 class="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Corrigir Venda</h3>
                     <p class="text-[10px] font-bold text-blue-500 uppercase">{{ editModal.form.nome_produto_snapshot }}</p>
                 </div>
 
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4 font-bold">
                         <div class="space-y-1">
-                            <label class="text-[9px] text-gray-400 uppercase ml-2">Quantidade</label>
-                            <input v-model.number="editModal.form.quantidade" type="number" class="input-soft">
+                            <label class="text-[9px] text-blue-500 uppercase ml-2 italic">Custo Pago (R$)</label>
+                            <input v-model.number="editModal.custo_manual" type="number" step="0.01" class="input-soft border-blue-100">
                         </div>
                         <div class="space-y-1">
-                            <label class="text-[9px] text-orange-500 uppercase ml-2 italic">Entrada Líquida (ML)</label>
+                            <label class="text-[9px] text-orange-500 uppercase ml-2 italic">Entrada ML (Líquida)</label>
                             <input v-model.number="editModal.form.preco_venda_unitario" type="number" step="0.01" class="input-soft border-orange-100">
                         </div>
                     </div>
 
-                    <div class="space-y-1 font-bold">
-                        <label class="text-[9px] text-gray-400 uppercase ml-2">ID do Pedido (Meli)</label>
-                        <input v-model="editModal.form.ml_order_id" type="text" class="input-soft">
+                    <div class="grid grid-cols-2 gap-4 font-bold">
+                        <div class="space-y-1">
+                            <label class="text-[9px] text-gray-400 uppercase ml-2">Quantidade</label>
+                            <input v-model.number="editModal.form.quantidade" type="number" class="input-soft">
+                        </div>
+                        <div class="space-y-1">
+                             <label class="text-[9px] text-gray-400 uppercase ml-2">ID Pedido</label>
+                            <input v-model="editModal.form.ml_order_id" type="text" class="input-soft">
+                        </div>
                     </div>
 
                     <div class="space-y-1 font-bold">
@@ -96,15 +103,15 @@ const HistoricoView = {
                         <input v-model="editModal.form.tracking_code" type="text" class="input-soft uppercase">
                     </div>
 
-                    <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
-                        <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none">Novo Lucro Líquido</p>
-                        <p class="text-xl font-black text-emerald-700 mt-1">R$ {{ (editModal.form.preco_venda_unitario * editModal.form.quantidade - (editModal.custo_puro * editModal.form.quantidade)).toFixed(2) }}</p>
+                    <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 shadow-inner">
+                        <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none">Lucro Líquido Calculado</p>
+                        <p class="text-2xl font-black text-emerald-700 mt-1">R$ {{ ((editModal.form.preco_venda_unitario - editModal.custo_manual) * editModal.form.quantidade).toFixed(2) }}</p>
                     </div>
                 </div>
 
                 <div class="flex gap-4 mt-8">
                     <button @click="editModal.aberto = false" class="flex-1 py-4 font-bold text-gray-400 uppercase text-[10px] bg-gray-50 rounded-2xl">Cancelar</button>
-                    <button @click="confirmarEdicao" class="flex-1 py-4 font-bold text-white uppercase text-[10px] bg-blue-500 rounded-2xl shadow-lg shadow-blue-100">Salvar</button>
+                    <button @click="confirmarEdicao" class="flex-1 py-4 font-bold text-white uppercase text-[10px] bg-blue-500 rounded-2xl shadow-lg shadow-blue-100">Salvar Alterações</button>
                 </div>
             </div>
         </div>
@@ -115,7 +122,7 @@ const HistoricoView = {
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
                 <h3 class="text-xl font-black text-slate-900 tracking-tighter">Excluir Registro?</h3>
-                <p class="text-xs text-gray-500 font-medium mt-2 leading-relaxed">Esta ação não pode ser desfeita.</p>
+                <p class="text-xs text-gray-500 font-medium mt-2 leading-relaxed">Esta ação não pode ser desfeita no faturamento.</p>
                 <div class="flex gap-3 mt-8">
                     <button @click="confirmModal.aberto = false" class="flex-1 py-4 font-bold text-gray-400 uppercase text-[10px] bg-gray-50 rounded-2xl">Cancelar</button>
                     <button @click="confirmarExclusao" class="flex-1 py-4 font-bold text-white uppercase text-[10px] bg-red-500 rounded-2xl shadow-lg shadow-red-200">Confirmar</button>
@@ -130,7 +137,7 @@ const HistoricoView = {
       paginaAtual: 1,
       itensPorPagina: window.innerWidth < 768 ? 7 : 10,
       confirmModal: { aberto: false, idParaExcluir: null },
-      editModal: { aberto: false, form: {}, custo_puro: 0 },
+      editModal: { aberto: false, form: {}, custo_manual: 0 },
     };
   },
   computed: {
@@ -158,22 +165,22 @@ const HistoricoView = {
       navigator.clipboard.writeText(c);
       this.$emit("notificar", {
         titulo: "Copiado!",
-        texto: "Código de rastreio copiado.",
+        texto: "Rastreio copiado para a área de transferência.",
       });
     },
     abrirEdicao(v) {
-      // Busca o custo atual do produto para garantir o cálculo do lucro na edição
+      // Busca o custo atual que está no banco para o produto desta venda
       const produto = this.produtos.find((p) => p.id === v.produto_id);
-      this.editModal.custo_puro = produto ? Number(produto.custo) : 0;
+      this.editModal.custo_manual = produto ? Number(produto.custo) : 0;
       this.editModal.form = { ...v };
       this.editModal.aberto = true;
     },
     async confirmarEdicao() {
       try {
         const f = this.editModal.form;
-        // Recalcula lucro líquido com a nova regra: (Preço - Custo) * Qtd
+        // Cálculo do Lucro com base no custo editável: (Entrada - Custo) * Qtd
         const novoLucro =
-          (f.preco_venda_unitario - this.editModal.custo_puro) * f.quantidade;
+          (f.preco_venda_unitario - this.editModal.custo_manual) * f.quantidade;
 
         const { error } = await window.supabase
           .from("vendas")
@@ -192,8 +199,8 @@ const HistoricoView = {
         if (!error) {
           this.$emit("refresh");
           this.$emit("notificar", {
-            titulo: "Atualizado!",
-            texto: "Venda corrigida com sucesso.",
+            titulo: "Venda Atualizada!",
+            texto: "Os novos valores de custo e lucro foram salvos.",
           });
           this.editModal.aberto = false;
         }
@@ -215,7 +222,7 @@ const HistoricoView = {
         this.$emit("refresh");
         this.$emit("notificar", {
           titulo: "Removido!",
-          texto: "O registro foi excluído.",
+          texto: "Registro excluído com sucesso.",
         });
       } catch (err) {
         console.error(err);
