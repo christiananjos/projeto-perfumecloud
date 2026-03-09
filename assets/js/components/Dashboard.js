@@ -48,16 +48,28 @@ const DashboardView = {
   computed: {
     topCinco() {
       if (!this.vendas || this.vendas.length === 0) return [];
+
       const grupos = {};
+
       this.vendas.forEach((v) => {
-        const nome = v.nome_produto_snapshot || "Produto";
+        const nomeOriginal = v.nome_produto_snapshot || "Produto";
+        // Normalizamos a chave para o agrupamento (Case Insensitive)
+        const chaveAgrupamento = nomeOriginal.trim().toUpperCase();
         const lucro = Number(v.lucro_liquido || 0);
-        grupos[nome] = (grupos[nome] || 0) + lucro;
+
+        if (!grupos[chaveAgrupamento]) {
+          grupos[chaveAgrupamento] = {
+            nomeParaExibir: nomeOriginal,
+            totalLucro: 0,
+          };
+        }
+        grupos[chaveAgrupamento].totalLucro += lucro;
       });
-      return Object.entries(grupos)
-        .sort((a, b) => b[1] - a[1])
+
+      return Object.values(grupos)
+        .sort((a, b) => b.totalLucro - a.totalLucro)
         .slice(0, 5)
-        .map((s) => ({ nome: s[0], valor: s[1] }));
+        .map((g) => ({ nome: g.nomeParaExibir, valor: g.totalLucro }));
     },
   },
   methods: {
