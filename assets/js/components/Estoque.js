@@ -28,16 +28,16 @@ const EstoqueView = {
                             <th class="py-3 md:py-5 px-4 md:px-6 text-center w-[12%] italic">Margem %</th>
                             <th class="py-3 md:py-5 px-4 md:px-6 text-right w-[15%] text-slate-400 italic">Custo</th>
                             <th class="py-3 md:py-5 px-4 md:px-6 text-right text-orange-600 w-[18%] font-black uppercase italic">Venda ML</th>
-                            <th class="py-3 md:py-5 px-4 md:px-6 text-right text-orange-400 w-[18%] font-black uppercase italic">Venda Shopee</th>
-                            <th class="py-3 md:py-5 px-4 md:px-6 text-center w-24 text-slate-400 uppercase italic">Ações</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-right text-orange-400 w-[18%] font-black uppercase italic text-center">Venda Shopee</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-center w-24 text-slate-400 uppercase italic text-center">Ações</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
                         <tr v-for="p in paginados" :key="p.id" class="hover:bg-slate-50 transition-colors">
                             <td class="py-2 md:py-5 px-4 md:px-6">
-                                <div class="flex flex-col text-left">
-                                    <span class="text-slate-700 font-bold truncate leading-tight">{{ p.nome }}</span>
-                                    <span class="text-[8px] text-slate-400 font-medium uppercase tracking-tighter">{{ p.inspiracao || 'Original' }}</span>
+                                <div class="flex flex-col text-left font-bold">
+                                    <span class="text-slate-700 truncate leading-tight">{{ p.nome }}</span>
+                                    <span class="text-[8px] text-slate-400 uppercase tracking-tighter">{{ p.inspiracao || 'Original' }}</span>
                                 </div>
                             </td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
@@ -72,7 +72,7 @@ const EstoqueView = {
 
                     <div class="space-y-1">
                         <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Inspiração / Cor / Variação</label>
-                        <input v-model="form.inspiracao" type="text" placeholder="Ex: Preto, Azul, Amadeirado..." class="input-soft">
+                        <input v-model="form.inspiracao" type="text" class="input-soft">
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4">
@@ -83,6 +83,17 @@ const EstoqueView = {
                         <div class="space-y-1">
                             <label class="text-[9px] font-bold text-emerald-500 uppercase ml-2 italic">Margem (%)</label>
                             <input v-model.number="form.margem" type="number" @input="autoCalcularTudo" class="input-soft font-bold !text-emerald-600">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
+                        <div class="space-y-1">
+                            <label class="text-[9px] font-black text-slate-500 uppercase ml-2">Taxa ML (%)</label>
+                            <input v-model.number="form.taxa_ml" type="number" step="0.01" @input="autoCalcularTudo" class="input-soft !bg-white">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[9px] font-black text-slate-500 uppercase ml-2">Frete ML (R$)</label>
+                            <input v-model.number="form.frete_fixo" type="number" step="0.01" @input="autoCalcularTudo" class="input-soft !bg-white">
                         </div>
                     </div>
 
@@ -128,7 +139,7 @@ const EstoqueView = {
       idSendoEditado: null,
       form: {
         nome: "",
-        inspiracao: "", // Sincronizado
+        inspiracao: "",
         custo: 0,
         preco_suger_ml: 0,
         preco_suger_shopee: 0,
@@ -163,11 +174,15 @@ const EstoqueView = {
     autoCalcularTudo() {
       const custo = Number(this.form.custo) || 0;
       const margemProd = 1 + Number(this.form.margem) / 100;
-      const taxaML = Number(this.form.taxa_ml || this.taxas.ml_comissao) / 100;
-      const freteML = Number(this.form.frete_fixo || this.taxas.ml_frete);
+
+      // LÓGICA ML USANDO VALORES DO FORMULÁRIO (DINÂMICOS)
+      const taxaML = Number(this.form.taxa_ml) / 100;
+      const freteML = Number(this.form.frete_fixo);
 
       const vML = (custo * margemProd + freteML) / (1 - taxaML);
       this.form.preco_suger_ml = Number(vML.toFixed(2));
+
+      // LÓGICA SHOPEE 2026
       this.form.preco_suger_shopee = Number(
         this.calcularPrecoShopee(custo, this.form.margem),
       );
@@ -195,11 +210,12 @@ const EstoqueView = {
         this.idSendoEditado = p.id;
         this.form = {
           nome: p.nome,
-          inspiracao: p.inspiracao || "", // Mapeado corretamente aqui
+          inspiracao: p.inspiracao || "",
           custo: Number(p.custo),
           margem: Number(p.margem || 10),
           preco_suger_ml: Number(p.preco_suger_ml),
           preco_suger_shopee: Number(p.preco_suger_shopee || 0),
+          // MAPEAMENTO CORRETO DAS TAXAS DO BANCO
           taxa_ml:
             p.mktp_taxa_override !== null
               ? Number(p.mktp_taxa_override)
@@ -230,7 +246,7 @@ const EstoqueView = {
     async salvar() {
       const payload = {
         nome: this.form.nome,
-        inspiracao: this.form.inspiracao, // Salva corretamente no banco
+        inspiracao: this.form.inspiracao,
         custo: this.form.custo,
         margem: this.form.margem,
         preco_suger_ml: this.form.preco_suger_ml,
