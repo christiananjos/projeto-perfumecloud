@@ -7,10 +7,17 @@ const HistoricoView = {
             <div class="md:hidden text-[9px] font-bold text-gray-400 uppercase tracking-widest text-right">{{ vendasFiltradas.length }} registros</div>
         </div>
 
-        <div class="px-4 shrink-0">
-            <div class="relative">
+        <div class="px-4 shrink-0 grid grid-cols-12 gap-2">
+            <div class="relative text-left col-span-8 md:col-span-9">
                 <i class="fa-solid fa-search absolute left-3 md:left-5 top-1/2 -translate-y-1/2 text-gray-400 text-xs md:text-base"></i>
-                <input v-model="busca" type="text" placeholder="Buscar produto ou pedido..." class="input-soft !pl-9 md:!pl-12 !py-2 md:!py-4 !text-xs md:!text-sm w-full">
+                <input v-model="busca" type="text" placeholder="Produto ou Rastreio..." class="input-soft !pl-9 md:!pl-12 !py-2 md:!py-4 !text-xs md:!text-sm w-full">
+            </div>
+            <div class="col-span-4 md:col-span-3">
+                <select v-model="filtroCanal" class="input-soft !py-2 md:!py-4 !text-[10px] md:!text-xs font-black uppercase tracking-tighter border-slate-200 text-slate-600">
+                    <option value="todos">Todos</option>
+                    <option value="ML">Mercado Livre</option>
+                    <option value="SHOPEE">Shopee</option>
+                </select>
             </div>
         </div>
 
@@ -21,7 +28,7 @@ const HistoricoView = {
                         <tr>
                             <th class="py-5 px-6 w-[18%] md:w-[12%] italic">Data</th>
                             <th class="py-5 px-6 w-[47%] md:w-[33%] italic">Produto</th>
-                            <th class="py-5 px-6 hidden md:table-cell md:w-[18%] italic text-center">Pedido / Rastreio</th>
+                            <th class="py-5 px-6 hidden md:table-cell md:w-[18%] italic text-center text-slate-400">Canal / Pedido</th>
                             <th class="py-5 px-6 hidden md:table-cell md:w-[12%] text-right text-emerald-600 italic">Lucro</th>
                             <th class="py-5 px-6 text-center w-[15%] md:w-[15%] italic">Ações</th>
                         </tr>
@@ -34,23 +41,32 @@ const HistoricoView = {
                             <td class="py-2 md:py-5 px-4 md:px-6">
                                 <div class="flex flex-col text-left">
                                     <span class="text-slate-700 font-black truncate text-[11px] md:text-sm uppercase tracking-tighter">{{ v.nome_produto_snapshot }}</span>
-                                    <div class="md:hidden flex flex-col gap-1 mt-1 font-bold text-[8px]">
-                                        <span v-if="v.ml_order_id" class="text-orange-600 italic">#{{ v.ml_order_id }}</span>
-                                        <span v-if="v.tracking_code" class="text-blue-500 tracking-tight uppercase">{{ v.tracking_code }}</span>
-                                        <span class="text-emerald-600 font-black mt-1">LUCRO: R$ {{ (v.lucro_liquido || 0).toFixed(2) }}</span>
+                                    <div class="md:hidden flex flex-wrap items-center gap-1 mt-1 font-bold text-[8px]">
+                                        <span :class="v.ml_order_id && v.ml_order_id.includes('SHOPEE') ? 'text-orange-600' : 'text-orange-400'" class="uppercase italic">
+                                            {{ v.ml_order_id && v.ml_order_id.includes('SHOPEE') ? '[SHOPEE]' : '[ML]' }}
+                                        </span>
+                                        <span v-if="v.tracking_code" class="text-blue-500 uppercase">| {{ v.tracking_code }}</span>
+                                        <span class="text-emerald-600 font-black">| R$ {{ (v.lucro_liquido || 0).toFixed(2) }}</span>
                                     </div>
                                 </div>
                             </td>
                             <td class="py-5 px-6 hidden md:table-cell">
                                 <div class="flex flex-col gap-1 text-center items-center">
-                                    <span v-if="v.ml_order_id" class="bg-orange-50 text-orange-700 px-2 py-0.5 rounded text-[9px] font-black w-fit uppercase border border-orange-100 italic">#{{ v.ml_order_id }}</span>
-                                    <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" class="text-[10px] text-blue-500 font-bold flex items-center gap-1 hover:text-blue-700"><i class="fa-solid fa-truck-fast"></i> {{ v.tracking_code }}</button>
+                                    <span :class="v.ml_order_id && v.ml_order_id.includes('SHOPEE') ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-700 border-orange-100'" 
+                                          class="px-2 py-0.5 rounded text-[9px] font-black w-fit uppercase border italic">
+                                        {{ v.ml_order_id || 'VENDA' }}
+                                    </span>
+                                    <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" class="text-[10px] text-blue-500 font-bold flex items-center gap-1 hover:text-blue-700">
+                                        <i class="fa-solid fa-truck-fast"></i> {{ v.tracking_code }}
+                                    </button>
                                 </div>
                             </td>
-                            <td class="py-5 px-6 hidden md:table-cell text-right text-emerald-600 font-black italic">R$ {{ (v.lucro_liquido || 0).toFixed(2) }}</td>
+                            <td class="py-5 px-6 hidden md:table-cell text-right text-emerald-600 font-black italic text-sm">
+                                R$ {{ (v.lucro_liquido || 0).toFixed(2) }}
+                            </td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
                                 <div class="flex items-center justify-center gap-3">
-                                    <button @click="abrirEdicao(v)" class="text-blue-400 hover:text-blue-600"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button @click="abrirEdicao(v)" class="text-blue-400 hover:text-blue-600 transition-transform active:scale-90"><i class="fa-solid fa-pen-to-square"></i></button>
                                     <button @click="solicitarExclusao(v.id)" :class="userRole === 'admin' ? 'text-red-200 hover:text-red-500' : 'text-gray-50 cursor-not-allowed'"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </td>
@@ -71,47 +87,43 @@ const HistoricoView = {
         <div v-if="editModal.aberto" class="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl animate-fade-in text-left">
                 <div class="text-center mb-6">
-                    <h3 class="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Corrigir Venda</h3>
-                    <p class="text-[10px] font-bold text-blue-500 uppercase">{{ editModal.form.nome_produto_snapshot }}</p>
+                    <h3 class="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Ajustar Venda</h3>
+                    <p class="text-[10px] font-bold text-blue-500 uppercase tracking-widest">{{ editModal.form.nome_produto_snapshot }}</p>
                 </div>
 
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4 font-bold">
-                        <div class="space-y-1">
-                            <label class="text-[9px] text-blue-500 uppercase ml-2 italic">Custo Pago (R$)</label>
+                        <div class="space-y-1 text-left">
+                            <label class="text-[9px] text-blue-500 uppercase ml-2 italic">Custo Un. (R$)</label>
                             <input v-model.number="editModal.custo_manual" type="number" step="0.01" class="input-soft border-blue-100">
                         </div>
-                        <div class="space-y-1">
-                            <label class="text-[9px] text-orange-500 uppercase ml-2 italic">Entrada ML (Líquida)</label>
+                        <div class="space-y-1 text-left">
+                            <label class="text-[9px] text-orange-500 uppercase ml-2 italic">Entrada Un. (R$)</label>
                             <input v-model.number="editModal.form.preco_venda_unitario" type="number" step="0.01" class="input-soft border-orange-100">
                         </div>
                     </div>
-
                     <div class="grid grid-cols-2 gap-4 font-bold">
-                        <div class="space-y-1">
-                            <label class="text-[9px] text-gray-400 uppercase ml-2">Quantidade</label>
+                        <div class="space-y-1 text-left">
+                            <label class="text-[9px] text-gray-400 uppercase ml-2">Qtd Vendida</label>
                             <input v-model.number="editModal.form.quantidade" type="number" class="input-soft">
                         </div>
-                        <div class="space-y-1">
-                             <label class="text-[9px] text-gray-400 uppercase ml-2">ID Pedido</label>
+                        <div class="space-y-1 text-left">
+                             <label class="text-[9px] text-gray-400 uppercase ml-2">ID/Canal Pedido</label>
                             <input v-model="editModal.form.ml_order_id" type="text" class="input-soft">
                         </div>
                     </div>
-
-                    <div class="space-y-1 font-bold">
+                    <div class="space-y-1 font-bold text-left">
                         <label class="text-[9px] text-gray-400 uppercase ml-2">Código de Rastreio</label>
                         <input v-model="editModal.form.tracking_code" type="text" class="input-soft uppercase">
                     </div>
-
                     <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 shadow-inner">
                         <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none">Lucro Líquido Calculado</p>
                         <p class="text-2xl font-black text-emerald-700 mt-1">R$ {{ ((editModal.form.preco_venda_unitario - editModal.custo_manual) * editModal.form.quantidade).toFixed(2) }}</p>
                     </div>
                 </div>
-
                 <div class="flex gap-4 mt-8">
-                    <button @click="editModal.aberto = false" class="flex-1 py-4 font-bold text-gray-400 uppercase text-[10px] bg-gray-50 rounded-2xl">Cancelar</button>
-                    <button @click="confirmarEdicao" class="flex-1 py-4 font-bold text-white uppercase text-[10px] bg-blue-500 rounded-2xl shadow-lg shadow-blue-100">Salvar Alterações</button>
+                    <button @click="editModal.aberto = false" class="flex-1 py-4 font-bold text-gray-400 uppercase text-[10px] bg-gray-50 rounded-2xl">Voltar</button>
+                    <button @click="confirmarEdicao" class="flex-1 py-4 font-bold text-white uppercase text-[10px] bg-blue-500 rounded-2xl">Atualizar</button>
                 </div>
             </div>
         </div>
@@ -121,11 +133,10 @@ const HistoricoView = {
                 <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
-                <h3 class="text-xl font-black text-slate-900 tracking-tighter">Excluir Registro?</h3>
-                <p class="text-xs text-gray-500 font-medium mt-2 leading-relaxed">Esta ação não pode ser desfeita no faturamento.</p>
+                <h3 class="text-xl font-black text-slate-900 tracking-tighter">Remover Venda?</h3>
                 <div class="flex gap-3 mt-8">
                     <button @click="confirmModal.aberto = false" class="flex-1 py-4 font-bold text-gray-400 uppercase text-[10px] bg-gray-50 rounded-2xl">Cancelar</button>
-                    <button @click="confirmarExclusao" class="flex-1 py-4 font-bold text-white uppercase text-[10px] bg-red-500 rounded-2xl shadow-lg shadow-red-200">Confirmar</button>
+                    <button @click="confirmarExclusao" class="flex-1 py-4 font-bold text-white uppercase text-[10px] bg-red-500 rounded-2xl shadow-lg shadow-red-200">Excluir</button>
                 </div>
             </div>
         </div>
@@ -134,6 +145,7 @@ const HistoricoView = {
   data() {
     return {
       busca: "",
+      filtroCanal: "todos", // NOVO ESTADO DO FILTRO
       paginaAtual: 1,
       itensPorPagina: window.innerWidth < 768 ? 7 : 10,
       confirmModal: { aberto: false, idParaExcluir: null },
@@ -143,12 +155,28 @@ const HistoricoView = {
   computed: {
     vendasFiltradas() {
       const t = this.busca.toLowerCase();
-      return this.vendas.filter(
-        (v) =>
+      const canal = this.filtroCanal;
+
+      return this.vendas.filter((v) => {
+        // Lógica de busca por texto
+        const matchBusca =
           (v.nome_produto_snapshot || "").toLowerCase().includes(t) ||
           (v.ml_order_id || "").toLowerCase().includes(t) ||
-          (v.tracking_code || "").toLowerCase().includes(t),
-      );
+          (v.tracking_code || "").toLowerCase().includes(t);
+
+        // Lógica de filtro por canal
+        let matchCanal = true;
+        const canalVenda = (v.ml_order_id || "").toUpperCase();
+
+        if (canal === "ML") {
+          // Considera ML se não for Shopee e não tiver um ID complexo que contenha SHOPEE
+          matchCanal = !canalVenda.includes("SHOPEE");
+        } else if (canal === "SHOPEE") {
+          matchCanal = canalVenda.includes("SHOPEE");
+        }
+
+        return matchBusca && matchCanal;
+      });
     },
     totalPaginas() {
       return Math.ceil(this.vendasFiltradas.length / this.itensPorPagina) || 1;
@@ -165,11 +193,10 @@ const HistoricoView = {
       navigator.clipboard.writeText(c);
       this.$emit("notificar", {
         titulo: "Copiado!",
-        texto: "Rastreio copiado para a área de transferência.",
+        texto: "Rastreio pronto para colar.",
       });
     },
     abrirEdicao(v) {
-      // Busca o custo atual que está no banco para o produto desta venda
       const produto = this.produtos.find((p) => p.id === v.produto_id);
       this.editModal.custo_manual = produto ? Number(produto.custo) : 0;
       this.editModal.form = { ...v };
@@ -178,10 +205,8 @@ const HistoricoView = {
     async confirmarEdicao() {
       try {
         const f = this.editModal.form;
-        // Cálculo do Lucro com base no custo editável: (Entrada - Custo) * Qtd
         const novoLucro =
           (f.preco_venda_unitario - this.editModal.custo_manual) * f.quantidade;
-
         const { error } = await window.supabase
           .from("vendas")
           .update({
@@ -199,8 +224,8 @@ const HistoricoView = {
         if (!error) {
           this.$emit("refresh");
           this.$emit("notificar", {
-            titulo: "Venda Atualizada!",
-            texto: "Os novos valores de custo e lucro foram salvos.",
+            titulo: "Sucesso!",
+            texto: "Venda atualizada.",
           });
           this.editModal.aberto = false;
         }
@@ -220,10 +245,6 @@ const HistoricoView = {
           .delete()
           .eq("id", this.confirmModal.idParaExcluir);
         this.$emit("refresh");
-        this.$emit("notificar", {
-          titulo: "Removido!",
-          texto: "Registro excluído com sucesso.",
-        });
       } catch (err) {
         console.error(err);
       } finally {

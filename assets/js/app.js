@@ -26,7 +26,18 @@ const app = createApp({
       menuAberto: false,
       produtos: [],
       vendas: [],
-      taxas: { ml_comissao: 12, ml_frete: 22.45 },
+      // ADICIONADO: Configurações da Shopee 2026 centralizadas
+      taxas: {
+        ml_comissao: 12,
+        ml_frete: 22.45,
+        shopee_regras: [
+          { min: 0, max: 79.99, taxa: 0.2, fixa: 4.0 },
+          { min: 80, max: 99.99, taxa: 0.14, fixa: 16.0 },
+          { min: 100, max: 199.99, taxa: 0.14, fixa: 20.0 },
+          { min: 200, max: 499.99, taxa: 0.14, fixa: 26.0 },
+          { min: 500, max: 99999, taxa: 0.14, fixa: 28.0 },
+        ],
+      },
       feedback: { ativo: false, titulo: "", texto: "" },
       menu: [
         { id: "dashboard", label: "Dashboard", icon: "fa-solid fa-chart-pie" },
@@ -68,7 +79,7 @@ const app = createApp({
   methods: {
     async carregarDados() {
       try {
-        // 1. Busca as configurações de taxas
+        // 1. Busca configurações (ML) e mantém as da Shopee
         const { data: t } = await window.supabase
           .from("configuracoes")
           .select("chave, valor");
@@ -78,10 +89,11 @@ const app = createApp({
             (acc, i) => ({ ...acc, [i.chave]: Number(i.valor) }),
             {},
           );
-          this.taxas = mapaTaxas;
+          // Faz merge das taxas do banco com as regras da Shopee injetadas no data
+          this.taxas = { ...this.taxas, ...mapaTaxas };
         }
 
-        // 2. BUSCA OS PRODUTOS (A parte que estava faltando)
+        // 2. Busca Produtos (O select "*" já traz o preco_suger_shopee)
         const { data: p, error: errorP } = await window.supabase
           .from("produtos")
           .select("*")
@@ -90,7 +102,7 @@ const app = createApp({
         if (errorP) throw errorP;
         this.produtos = p || [];
 
-        // 3. BUSCA AS VENDAS
+        // 3. Busca Vendas
         const { data: v, error: errorV } = await window.supabase
           .from("vendas")
           .select("*")

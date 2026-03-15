@@ -21,19 +21,15 @@ const EstoqueView = {
 
         <div class="bg-white rounded-[1.5rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col flex-1 mx-2 md:mx-0 mb-2">
             <div class="flex-1 overflow-x-auto">
-                <div v-if="produtos.length === 0" class="p-20 text-center text-gray-400">
-                    <i class="fa-solid fa-box-open text-4xl mb-4 block"></i>
-                    Nenhum produto encontrado.
-                </div>
-
-                <table v-else class="w-full text-left font-semibold text-xs md:text-sm table-fixed min-w-full">
+                <table class="w-full text-left font-semibold text-xs md:text-sm table-fixed min-w-full">
                     <thead class="bg-gray-50 text-[9px] md:text-[10px] font-bold uppercase text-gray-400 border-b">
                         <tr>
-                            <th class="py-3 md:py-5 px-4 md:px-6 w-[40%] md:w-[35%]">Produto</th>
-                            <th class="py-3 md:py-5 px-4 md:px-6 text-center w-[15%]">Margem %</th>
-                            <th class="py-3 md:py-5 px-4 md:px-6 text-right w-[15%] text-slate-400">Custo</th>
-                            <th class="py-3 md:py-5 px-4 md:px-6 text-right text-orange-600 w-[20%] font-black uppercase tracking-tighter italic">Preço ML</th>
-                            <th class="py-3 md:py-5 px-4 md:px-6 text-center w-[15%] md:w-32 text-slate-400 uppercase">Ações</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 w-[35%] md:w-[30%] italic">Produto</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-center w-[12%] italic">Margem %</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-right w-[15%] text-slate-400 italic">Custo</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-right text-orange-600 w-[18%] font-black uppercase italic">Venda ML</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-right text-orange-400 w-[18%] font-black uppercase italic">Venda Shopee</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-center w-24 text-slate-400 uppercase italic">Ações</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
@@ -49,6 +45,7 @@ const EstoqueView = {
                             </td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-right text-slate-400 font-bold">R$ {{ Number(p.custo).toFixed(2) }}</td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-right text-orange-600 font-black italic">R$ {{ Number(p.preco_suger_ml).toFixed(2) }}</td>
+                            <td class="py-2 md:py-5 px-4 md:px-6 text-right text-orange-400 font-black italic">R$ {{ Number(p.preco_suger_shopee || 0).toFixed(2) }}</td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <button @click="userRole === 'admin' ? abrirModal(p) : null" :class="userRole === 'admin' ? 'text-blue-400 hover:text-blue-600' : 'text-gray-200 cursor-not-allowed'"><i class="fa-solid fa-pen-to-square"></i></button>
@@ -59,21 +56,10 @@ const EstoqueView = {
                     </tbody>
                 </table>
             </div>
-            
-            <div class="p-3 md:p-6 bg-gray-50 border-t border-gray-100 flex justify-between items-center shrink-0">
-                <div class="flex flex-col text-left">
-                   <span class="text-[9px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">{{ produtosFiltrados.length }} itens</span>
-                   <span class="text-[8px] md:text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Página {{ paginaAtual }} de {{ totalPaginas }}</span>
-                </div>
-                <div class="flex gap-1">
-                    <button @click="paginaAtual--" :disabled="paginaAtual === 1" class="w-8 h-8 md:w-10 md:h-10 border rounded-xl flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
-                    <button @click="paginaAtual++" :disabled="paginaAtual === totalPaginas" class="w-8 h-8 md:w-10 md:h-10 border rounded-xl flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
-                </div>
-            </div>
         </div>
 
         <div v-if="modal.aberto" class="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-            <div class="bg-white rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl animate-fade-in text-left my-8">
+            <div class="bg-white rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl animate-fade-in text-left my-8 border border-slate-100">
                 <div class="text-center mb-6">
                     <h3 class="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">{{ modoEdicao ? 'Ajustar Produto' : 'Novo Produto' }}</h3>
                 </div>
@@ -83,40 +69,44 @@ const EstoqueView = {
                         <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Nome do Produto</label>
                         <input v-model="form.nome" type="text" class="input-soft">
                     </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Inspiração / Cor / Variação</label>
+                        <input v-model="form.inspiracao" type="text" placeholder="Ex: Preto, Azul, Amadeirado..." class="input-soft">
+                    </div>
                     
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-1">
                             <label class="text-[9px] font-bold text-blue-500 uppercase ml-2 italic">Custo (R$)</label>
-                            <input v-model.number="form.custo" type="number" step="0.01" @input="autoCalcularSugerido" class="input-soft font-bold">
+                            <input v-model.number="form.custo" type="number" step="0.01" @input="autoCalcularTudo" class="input-soft font-bold">
                         </div>
                         <div class="space-y-1">
                             <label class="text-[9px] font-bold text-emerald-500 uppercase ml-2 italic">Margem (%)</label>
-                            <input v-model.number="form.margem" type="number" @input="autoCalcularSugerido" class="input-soft font-bold !text-emerald-600">
+                            <input v-model.number="form.margem" type="number" @input="autoCalcularTudo" class="input-soft font-bold !text-emerald-600">
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
+                    <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-1">
-                            <label class="text-[9px] font-black text-slate-500 uppercase ml-2">Taxa ML (%)</label>
-                            <input v-model.number="form.taxa_ml" type="number" step="0.01" @input="autoCalcularSugerido" class="input-soft !bg-white">
+                            <label class="text-[9px] font-bold text-orange-600 uppercase ml-2 italic font-black">Sugestão ML</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-orange-300">R$</span>
+                                <input v-model.number="form.preco_suger_ml" type="number" step="0.01" class="input-soft !pl-8 border-orange-100 text-orange-600 font-bold">
+                            </div>
                         </div>
                         <div class="space-y-1">
-                            <label class="text-[9px] font-black text-slate-500 uppercase ml-2">Frete (R$)</label>
-                            <input v-model.number="form.frete_fixo" type="number" step="0.01" @input="autoCalcularSugerido" class="input-soft !bg-white">
-                        </div>
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="text-[9px] font-bold text-orange-400 uppercase ml-2 italic font-black">Venda Sugerida Mercado Livre</label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-orange-300">R$</span>
-                            <input v-model.number="form.preco_suger_ml" type="number" step="0.01" class="input-soft !pl-10 border-orange-100 text-orange-600 font-bold">
+                            <label class="text-[9px] font-bold text-orange-400 uppercase ml-2 italic font-black">Sugestão Shopee</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-orange-200">R$</span>
+                                <input v-model.number="form.preco_suger_shopee" type="number" step="0.01" class="input-soft !pl-8 border-orange-50 text-orange-500 font-bold">
+                            </div>
                         </div>
                     </div>
 
                     <div class="bg-slate-900 rounded-2xl p-4 text-[9px] font-bold uppercase tracking-widest text-white/70">
-                        <div class="flex justify-between">
-                            <span>Lucro Alvo: <b class="text-emerald-400">R$ {{ (Number(form.custo || 0) * (Number(form.margem || 10)/100)).toFixed(2) }}</b></span>
+                        <div class="flex justify-between items-center">
+                            <span>Lucro Real Esperado:</span>
+                            <b class="text-emerald-400 text-sm">R$ {{ (Number(form.custo || 0) * (Number(form.margem || 10)/100)).toFixed(2) }}</b>
                         </div>
                     </div>
                 </div>
@@ -138,9 +128,10 @@ const EstoqueView = {
       idSendoEditado: null,
       form: {
         nome: "",
-        inspiracao: "",
+        inspiracao: "", // Sincronizado
         custo: 0,
         preco_suger_ml: 0,
+        preco_suger_shopee: 0,
         margem: 10,
         taxa_ml: 0,
         frete_fixo: 0,
@@ -150,8 +141,10 @@ const EstoqueView = {
   computed: {
     produtosFiltrados() {
       const t = (this.filtros.busca || "").toLowerCase();
-      return this.produtos.filter((p) =>
-        (p.nome || "").toLowerCase().includes(t),
+      return this.produtos.filter(
+        (p) =>
+          (p.nome || "").toLowerCase().includes(t) ||
+          (p.inspiracao || "").toLowerCase().includes(t),
       );
     },
     totalPaginas() {
@@ -167,33 +160,46 @@ const EstoqueView = {
     },
   },
   methods: {
-    calcularSugeridoDinamico(p) {
-      if (!this.taxas) return "0.00";
-      const custo = Number(p.custo) || 0;
-      const margem = 1 + Number(p.margem) / 100;
-      const taxa = Number(p.taxa_ml) / 100;
-      const frete = Number(p.frete_fixo);
+    autoCalcularTudo() {
+      const custo = Number(this.form.custo) || 0;
+      const margemProd = 1 + Number(this.form.margem) / 100;
+      const taxaML = Number(this.form.taxa_ml || this.taxas.ml_comissao) / 100;
+      const freteML = Number(this.form.frete_fixo || this.taxas.ml_frete);
 
-      // Markup ML: (Custo * Margem + Frete) / (1 - Taxa)
-      return ((custo * margem + frete) / (1 - taxa)).toFixed(2);
-    },
-    autoCalcularSugerido() {
-      this.form.preco_suger_ml = Number(
-        this.calcularSugeridoDinamico(this.form),
+      const vML = (custo * margemProd + freteML) / (1 - taxaML);
+      this.form.preco_suger_ml = Number(vML.toFixed(2));
+      this.form.preco_suger_shopee = Number(
+        this.calcularPrecoShopee(custo, this.form.margem),
       );
+    },
+    calcularPrecoShopee(custo, margem) {
+      const lucroAlvo = custo * (margem / 100);
+      const valorNecessario = custo + lucroAlvo;
+      const faixas = this.taxas.shopee_regras || [
+        { min: 0, max: 79.99, taxa: 0.2, fixa: 4.0 },
+        { min: 80, max: 99.99, taxa: 0.14, fixa: 16.0 },
+        { min: 100, max: 199.99, taxa: 0.14, fixa: 20.0 },
+        { min: 200, max: 499.99, taxa: 0.14, fixa: 26.0 },
+        { min: 500, max: 99999, taxa: 0.14, fixa: 28.0 },
+      ];
+      for (let f of faixas) {
+        let tentativa = (valorNecessario + f.fixa) / (1 - f.taxa);
+        if (tentativa >= f.min && tentativa <= f.max)
+          return tentativa.toFixed(2);
+      }
+      return ((valorNecessario + 28) / 0.86).toFixed(2);
     },
     abrirModal(p = null) {
       if (p) {
         this.modoEdicao = true;
         this.idSendoEditado = p.id;
-        // MAPEIA DADOS DO BANCO PARA O FORMULÁRIO LOCAL
         this.form = {
           nome: p.nome,
-          inspiracao: p.inspiracao,
+          inspiracao: p.inspiracao || "", // Mapeado corretamente aqui
           custo: Number(p.custo),
           margem: Number(p.margem || 10),
           preco_suger_ml: Number(p.preco_suger_ml),
-          // Se o produto tiver override no banco ele usa, senão puxa o global do app.js
+          preco_suger_shopee: Number(p.preco_suger_shopee || 0),
           taxa_ml:
             p.mktp_taxa_override !== null
               ? Number(p.mktp_taxa_override)
@@ -205,12 +211,13 @@ const EstoqueView = {
         };
       } else {
         this.modoEdicao = false;
-        // NOVO PRODUTO: JA TRAZ PREENCHIDO COM O PADRÃO GLOBAL
         this.form = {
           nome: "",
+          inspiracao: "",
           custo: 0,
           margem: 10,
           preco_suger_ml: 0,
+          preco_suger_shopee: 0,
           taxa_ml: this.taxas.ml_comissao,
           frete_fixo: this.taxas.ml_frete,
         };
@@ -221,25 +228,23 @@ const EstoqueView = {
       this.modal.aberto = false;
     },
     async salvar() {
-      // MAPEIA FORMULÁRIO LOCAL PARA AS COLUNAS DO BANCO
       const payload = {
         nome: this.form.nome,
-        inspiracao: this.form.inspiracao,
+        inspiracao: this.form.inspiracao, // Salva corretamente no banco
         custo: this.form.custo,
         margem: this.form.margem,
         preco_suger_ml: this.form.preco_suger_ml,
+        preco_suger_shopee: this.form.preco_suger_shopee,
         mktp_taxa_override: this.form.taxa_ml,
         mktp_frete_override: this.form.frete_fixo,
         ativo: true,
       };
-
       if (this.modoEdicao)
         await window.supabase
           .from("produtos")
           .update(payload)
           .eq("id", this.idSendoEditado);
       else await window.supabase.from("produtos").insert([payload]);
-
       this.$emit("refresh");
       this.fecharModal();
     },
