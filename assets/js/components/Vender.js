@@ -3,18 +3,15 @@ const VenderView = {
     <div class="flex flex-col items-center justify-center min-h-[85vh] md:min-h-[70vh] animate-fade-in px-4 text-left">
         <div class="w-full max-w-lg bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-6 md:p-10 space-y-6 md:space-y-8">
             <div class="text-center space-y-1">
-                <h2 class="text-2xl md:text-3xl font-black tracking-tighter text-slate-900 leading-none italic uppercase tracking-tight">Venda Rápida</h2>
+                <h2 class="text-2xl md:text-3xl font-black tracking-tighter text-slate-900 leading-none italic uppercase">Venda Rápida</h2>
                 
-                <div class="flex justify-center gap-2 mt-4">
-                    <button @click="mudarCanal('ml')" 
-                        :class="form.canal === 'ml' ? 'bg-orange-500 text-white shadow-lg shadow-orange-100' : 'bg-slate-50 text-slate-400'" 
-                        class="px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95">
-                        Mercado Livre
-                    </button>
-                    <button @click="mudarCanal('shopee')" 
-                        :class="form.canal === 'shopee' ? 'bg-orange-600 text-white shadow-lg shadow-orange-100' : 'bg-slate-50 text-slate-400'" 
-                        class="px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95">
-                        Shopee
+                <div class="flex flex-wrap justify-center gap-2 mt-4">
+                    <button v-for="c in canais" :key="c.id"
+                        @click="mudarCanal(c)" 
+                        :style="form.canalId === c.id ? { backgroundColor: c.cor_hex, color: 'white' } : {}"
+                        :class="form.canalId === c.id ? 'shadow-lg' : 'bg-slate-50 text-slate-400'" 
+                        class="px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 border border-transparent">
+                        {{ c.nome }}
                     </button>
                 </div>
             </div>
@@ -22,7 +19,7 @@ const VenderView = {
             <div class="space-y-4 md:space-y-6">
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-slate-400 uppercase ml-4">Produto</label>
-                    <div class="relative">
+                    <div class="relative text-left">
                         <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
                         <input 
                             list="lista-vender" 
@@ -37,15 +34,13 @@ const VenderView = {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 md:gap-4 items-end">
+                <div class="grid grid-cols-2 gap-3 md:gap-4 items-end text-left">
                     <div class="space-y-1">
                         <label class="text-[10px] font-bold text-slate-400 uppercase ml-4 block h-4">Quantidade</label>
                         <input v-model.number="form.quantidade" type="number" min="1" class="input-soft !py-3 md:!py-4 text-center font-bold">
                     </div>
                     <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-orange-600 uppercase ml-4 block h-4 font-black italic">
-                            Entrada Líquida {{ form.canal === 'ml' ? 'ML' : 'Shopee' }}
-                        </label>
+                        <label class="text-[10px] font-bold text-orange-600 uppercase ml-4 block h-4 font-black italic">Entrada Líquida (Unit.)</label>
                         <div class="relative">
                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-orange-300 italic">R$</span>
                             <input v-model.number="form.precoRecebido" type="number" step="0.01" class="input-soft !pl-10 !py-3 md:!py-4 font-bold border-orange-200">
@@ -53,7 +48,7 @@ const VenderView = {
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-left">
                     <div class="space-y-1 text-slate-400">
                         <label class="text-[10px] font-bold uppercase ml-4 tracking-widest">ID do Pedido</label>
                         <input v-model="form.mlOrderId" type="text" placeholder="Opcional" class="input-soft !py-3 md:!py-4">
@@ -65,7 +60,7 @@ const VenderView = {
                 </div>
 
                 <div v-if="form.produtoId" class="bg-emerald-50/80 rounded-2xl p-5 border border-emerald-100 flex justify-between items-center animate-fade-in shadow-sm">
-                    <div>
+                    <div class="text-left">
                         <p class="text-[8px] font-black text-emerald-600 uppercase tracking-widest leading-none">Lucro Líquido Real</p>
                         <p class="text-2xl font-black text-emerald-700 mt-1">R$ {{ calcularLucroSimples() }}</p>
                     </div>
@@ -91,12 +86,12 @@ const VenderView = {
             </div>
         </div>
     </div>`,
-  props: ["produtos"],
+  props: ["produtos", "canais"],
   data() {
     return {
       inputBusca: "",
       form: {
-        canal: "ml", // Canal padrão
+        canalId: 1,
         produtoId: "",
         quantidade: 1,
         precoRecebido: 0,
@@ -106,22 +101,19 @@ const VenderView = {
     };
   },
   methods: {
-    mudarCanal(c) {
-      this.form.canal = c;
-      // Se já houver um produto selecionado, atualiza o preço sugerido para o novo canal
-      if (this.form.produtoId) {
-        this.aoSelecionarPeloNome();
-      }
+    mudarCanal(canal) {
+      this.form.canalId = canal.id;
+      if (this.form.produtoId) this.aoSelecionarPeloNome();
     },
     aoSelecionarPeloNome() {
       const p = this.produtos.find((i) => i.nome === this.inputBusca);
       if (p) {
         this.form.produtoId = p.id;
-        // Puxa a sugestão baseada no canal selecionado
+        // Lógica de preço sugerido: Se for Canal 2 (Shopee), usa o sugerido da Shopee, senão ML
         this.form.precoRecebido =
-          this.form.canal === "ml"
-            ? p.preco_suger_ml || 0
-            : p.preco_suger_shopee || 0;
+          this.form.canalId === 2
+            ? p.preco_suger_shopee || 0
+            : p.preco_suger_ml || 0;
       } else {
         this.form.produtoId = "";
       }
@@ -133,15 +125,15 @@ const VenderView = {
     calcularLucroSimples() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
       if (!p) return "0.00";
-
       const entradaLiquida = Number(this.form.precoRecebido);
       const custoUnitario = Number(p.custo);
-      const lucroUnitario = entradaLiquida - custoUnitario;
-
-      return (lucroUnitario * this.form.quantidade).toFixed(2);
+      return ((entradaLiquida - custoUnitario) * this.form.quantidade).toFixed(
+        2,
+      );
     },
     async salvar() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
+      const canalObj = this.canais.find((c) => c.id === this.form.canalId);
       const lucroTotal = Number(this.calcularLucroSimples());
       const faturamentoTotal = Number(
         this.form.precoRecebido * this.form.quantidade,
@@ -155,29 +147,28 @@ const VenderView = {
           preco_venda_unitario: this.form.precoRecebido,
           faturamento_total: faturamentoTotal,
           lucro_liquido: lucroTotal,
-          // Salva o canal no ID do pedido para fins de histórico se não houver um ID manual
-          ml_order_id: this.form.mlOrderId || this.form.canal.toUpperCase(),
-          tracking_code: this.form.trackingCode
-            ? this.form.trackingCode.toUpperCase()
-            : null,
+          canal_id: this.form.canalId,
+          canal: canalObj.nome,
+          ml_order_id: this.form.mlOrderId || null,
+          tracking_code: this.form.trackingCode?.toUpperCase() || null,
         },
       ]);
 
       if (!error) {
         this.$emit("notificar", {
           titulo: "Sucesso!",
-          texto: `Venda ${this.form.canal.toUpperCase()} registrada com sucesso.`,
+          texto: `Venda ${canalObj.nome.toUpperCase()} registrada com sucesso.`,
         });
+        this.$emit("refresh");
         this.inputBusca = "";
         this.form = {
-          canal: this.form.canal, // Mantém o canal que o usuário costuma usar
+          canalId: this.form.canalId,
           produtoId: "",
           quantidade: 1,
           precoRecebido: 0,
           mlOrderId: "",
           trackingCode: "",
         };
-        this.$emit("refresh");
       } else {
         alert("Erro ao salvar venda.");
       }

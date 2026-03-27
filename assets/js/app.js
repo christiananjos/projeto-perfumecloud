@@ -26,7 +26,7 @@ const app = createApp({
       menuAberto: false,
       produtos: [],
       vendas: [],
-      // ADICIONADO: Configurações da Shopee 2026 centralizadas
+      canais: [], // ADICIONADO: Lista de canais vinda do banco
       taxas: {
         ml_comissao: 12,
         ml_frete: 22.45,
@@ -79,35 +79,40 @@ const app = createApp({
   methods: {
     async carregarDados() {
       try {
-        // 1. Busca configurações (ML) e mantém as da Shopee
+        // 1. Busca configurações de taxas
         const { data: t } = await window.supabase
           .from("configuracoes")
           .select("chave, valor");
-
         if (t) {
           const mapaTaxas = t.reduce(
             (acc, i) => ({ ...acc, [i.chave]: Number(i.valor) }),
             {},
           );
-          // Faz merge das taxas do banco com as regras da Shopee injetadas no data
           this.taxas = { ...this.taxas, ...mapaTaxas };
         }
 
-        // 2. Busca Produtos (O select "*" já traz o preco_suger_shopee)
+        // 2. BUSCA OS CANAIS (NOVA TABELA)
+        const { data: c, error: errorC } = await window.supabase
+          .from("canais")
+          .select("*")
+          .eq("ativo", true)
+          .order("id");
+        if (errorC) throw errorC;
+        this.canais = c || [];
+
+        // 3. Busca Produtos
         const { data: p, error: errorP } = await window.supabase
           .from("produtos")
           .select("*")
           .order("nome");
-
         if (errorP) throw errorP;
         this.produtos = p || [];
 
-        // 3. Busca Vendas
+        // 4. Busca Vendas (O select "*" já deve trazer o canal_id agora)
         const { data: v, error: errorV } = await window.supabase
           .from("vendas")
           .select("*")
           .order("created_at", { ascending: false });
-
         if (errorV) throw errorV;
         this.vendas = v || [];
       } catch (err) {
@@ -135,6 +140,7 @@ const app = createApp({
         this.telaAtual = "dashboard";
         this.produtos = [];
         this.vendas = [];
+        this.canais = [];
       } catch (error) {
         console.error("Erro ao sair", error);
         this.session = null;
