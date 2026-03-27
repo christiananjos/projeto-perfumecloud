@@ -188,21 +188,32 @@ const EstoqueView = {
       );
     },
     calcularPrecoShopee(custo, margem) {
-      const lucroAlvo = custo * (margem / 100);
-      const valorNecessario = custo + lucroAlvo;
-      const faixas = this.taxas.shopee_regras || [
-        { min: 0, max: 79.99, taxa: 0.2, fixa: 4.0 },
-        { min: 80, max: 99.99, taxa: 0.14, fixa: 16.0 },
-        { min: 100, max: 199.99, taxa: 0.14, fixa: 20.0 },
-        { min: 200, max: 499.99, taxa: 0.14, fixa: 26.0 },
-        { min: 500, max: 99999, taxa: 0.14, fixa: 28.0 },
-      ];
-      for (let f of faixas) {
-        let tentativa = (valorNecessario + f.fixa) / (1 - f.taxa);
-        if (tentativa >= f.min && tentativa <= f.max)
-          return tentativa.toFixed(2);
+      const custoNumerico = Number(custo) || 0;
+      const margemPercentual = 1 + Number(margem) / 100;
+      const valorComMargem = custoNumerico * margemPercentual;
+
+      // Regra 1: Itens até R$ 79,99 (Comissão 20% + R$ 4,00 fixos)
+      let tentativa1 = (valorComMargem + 4) / 0.8;
+      if (tentativa1 <= 79.99) {
+        return tentativa1.toFixed(2);
       }
-      return ((valorNecessario + 28) / 0.86).toFixed(2);
+
+      // Regra 2: R$ 80,00 a R$ 99,99 (Comissão 14% + R$ 16,00 fixos)
+      let tentativa2 = (valorComMargem + 16) / 0.86;
+      if (tentativa2 >= 80 && tentativa2 <= 99.99) {
+        return tentativa2.toFixed(2);
+      }
+
+      // Regra 3: R$ 100,00 a R$ 199,99 (Comissão 14% + R$ 20,00 fixos)
+      let tentativa3 = (valorComMargem + 20) / 0.86;
+      if (tentativa3 >= 100 && tentativa3 <= 199.99) {
+        return tentativa3.toFixed(2);
+      }
+
+      // Regra 4: Itens acima de R$ 200,00 (Comissão 14% + R$ 26,00 fixos)
+      // Nota: O teto de R$ 28 que você tinha antes mudou para R$ 26 conforme o trecho.
+      let tentativa4 = (valorComMargem + 26) / 0.86;
+      return tentativa4.toFixed(2);
     },
     abrirModal(p = null) {
       if (p) {
