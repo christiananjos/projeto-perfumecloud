@@ -1,4 +1,6 @@
-const HistoricoView = {
+import { apiPut, apiDelete } from '../api.js';
+
+
   template: `
     <div class="animate-fade-in flex flex-col mx-auto w-full md:max-w-6xl h-[92vh] md:h-auto space-y-3 md:space-y-8 pt-2 text-left">
         
@@ -170,9 +172,9 @@ const HistoricoView = {
       const canal = this.filtroCanal;
       return this.vendas.filter((v) => {
         const matchBusca =
-          (v.nome_produto_snapshot || "").toLowerCase().includes(t) ||
-          (v.ml_order_id || "").toLowerCase().includes(t) ||
-          (v.tracking_code || "").toLowerCase().includes(t);
+          (v.nomeProdutoSnapshot || "").toLowerCase().includes(t) ||
+          (v.mlOrderId || "").toLowerCase().includes(t) ||
+          (v.trackingCode || "").toLowerCase().includes(t);
         const matchCanal = canal === "todos" || v.canal === canal;
         return matchBusca && matchCanal;
       });
@@ -196,7 +198,7 @@ const HistoricoView = {
       });
     },
     abrirEdicao(v) {
-      const produto = this.produtos.find((p) => p.id === v.produto_id);
+      const produto = this.produtos.find((p) => p.id === v.produtoId);
       this.editModal.custo_manual = produto ? Number(produto.custo) : 0;
       this.editModal.form = { ...v };
       this.editModal.aberto = true;
@@ -204,23 +206,15 @@ const HistoricoView = {
     async confirmarEdicao() {
       try {
         const f = this.editModal.form;
-        const novoLucro =
-          (f.preco_venda_unitario - this.editModal.custo_manual) * f.quantidade;
-        await window.supabase
-          .from("vendas")
-          .update({
-            quantidade: f.quantidade,
-            preco_venda_unitario: f.preco_venda_unitario,
-            faturamento_total: f.preco_venda_unitario * f.quantidade,
-            lucro_liquido: novoLucro,
-            canal: f.canal, // Salva o canal editado
-            ml_order_id: f.ml_order_id,
-            tracking_code: f.tracking_code
-              ? f.tracking_code.toUpperCase()
-              : null,
-          })
-          .eq("id", f.id);
-        this.$emit("refresh");
+        await apiPut(`/api/vendas/${f.id}`, {
+          quantidade:          f.quantidade,
+          precoVendaUnitario:  f.precoVendaUnitario,
+          canalId:             f.canalId,
+          canalNome:           f.canal,
+          mlOrderId:           f.mlOrderId,
+          trackingCode:        f.trackingCode ? f.trackingCode.toUpperCase() : null,
+        });
+        this.$emit('refresh');
         this.editModal.aberto = false;
       } catch (err) {
         console.error(err);
@@ -233,11 +227,8 @@ const HistoricoView = {
     },
     async confirmarExclusao() {
       try {
-        await window.supabase
-          .from("vendas")
-          .delete()
-          .eq("id", this.confirmModal.idParaExcluir);
-        this.$emit("refresh");
+        await apiDelete(`/api/vendas/${this.confirmModal.idParaExcluir}`);
+        this.$emit('refresh');
       } catch (err) {
         console.error(err);
       } finally {

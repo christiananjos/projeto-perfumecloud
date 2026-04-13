@@ -1,4 +1,6 @@
-const VenderView = {
+import { apiPost } from '../api.js';
+
+
   template: `
     <div class="flex flex-col items-center justify-center min-h-[85vh] md:min-h-[70vh] animate-fade-in px-4 text-left">
         <div class="w-full max-w-lg bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-6 md:p-10 space-y-6 md:space-y-8">
@@ -112,8 +114,8 @@ const VenderView = {
         // Lógica de preço sugerido: Se for Canal 2 (Shopee), usa o sugerido da Shopee, senão ML
         this.form.precoRecebido =
           this.form.canalId === 2
-            ? p.preco_suger_shopee || 0
-            : p.preco_suger_ml || 0;
+            ? p.precoSugerShopee || 0
+            : p.precoSugerMl || 0;
       } else {
         this.form.produtoId = "";
       }
@@ -139,20 +141,16 @@ const VenderView = {
         this.form.precoRecebido * this.form.quantidade,
       );
 
-      const { error } = await window.supabase.from("vendas").insert([
-        {
-          produto_id: this.form.produtoId,
-          nome_produto_snapshot: p.nome,
-          quantidade: this.form.quantidade,
-          preco_venda_unitario: this.form.precoRecebido,
-          faturamento_total: faturamentoTotal,
-          lucro_liquido: lucroTotal,
-          canal_id: this.form.canalId,
-          canal: canalObj.nome,
-          ml_order_id: this.form.mlOrderId || null,
-          tracking_code: this.form.trackingCode?.toUpperCase() || null,
-        },
-      ]);
+      const { error } = await apiPost('/api/vendas', {
+        produtoId: this.form.produtoId,
+        quantidade: this.form.quantidade,
+        precoVendaUnitario: this.form.precoRecebido,
+        canalId: this.form.canalId,
+        canalNome: canalObj.nome,
+        mlOrderId: this.form.mlOrderId || null,
+        trackingCode: this.form.trackingCode?.toUpperCase() || null,
+      }).then(() => ({ error: null })).catch(err => ({ error: err }));
+
 
       if (!error) {
         this.$emit("notificar", {

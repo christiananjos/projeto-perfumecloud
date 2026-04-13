@@ -1,3 +1,5 @@
+import { loginApi } from '../api.js';
+
 const LoginView = {
   template: `
     <div class="flex items-center justify-center min-h-screen bg-[#f8fafc] px-4">
@@ -78,6 +80,13 @@ const LoginView = {
         });
 
         if (error) throw error;
+
+        const apiData = await loginApi(emailFake, this.password);
+        if (apiData?.token) {
+          window.apiToken = apiData.token;
+          localStorage.setItem('apiToken', apiData.token);
+        }
+
         this.$emit("logged", data.session);
       } catch (err) {
         this.erro = "Usuário ou senha inválidos";

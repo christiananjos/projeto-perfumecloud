@@ -1,4 +1,6 @@
-const ConfiguracoesView = {
+import { apiPost, apiPut, apiPatch } from '../api.js';
+
+
   template: `
     <div class="animate-fade-in flex flex-col mx-auto w-full md:max-w-4xl h-[92vh] md:h-auto space-y-6 pt-2 px-4 pb-10">
         <div class="flex flex-col shrink-0 text-left">
@@ -91,18 +93,9 @@ const ConfiguracoesView = {
     async salvarTaxas() {
       if (this.userRole !== "admin") return;
       try {
-        await window.supabase
-          .from("configuracoes")
-          .update({ valor: this.localTaxas.ml_comissao })
-          .eq("chave", "ml_comissao");
-        await window.supabase
-          .from("configuracoes")
-          .update({ valor: this.localTaxas.ml_frete })
-          .eq("chave", "ml_frete");
-        this.$emit("notificar", {
-          titulo: "Sucesso!",
-          texto: "Taxas atualizadas.",
-        });
+        await apiPut('/api/configuracoes', { chave: 'ml_comissao', valor: this.localTaxas.ml_comissao });
+        await apiPut('/api/configuracoes', { chave: 'ml_frete',    valor: this.localTaxas.ml_frete });
+        this.$emit("notificar", { titulo: "Sucesso!", texto: "Taxas atualizadas." });
         this.$emit("refresh");
       } catch (err) {
         console.error(err);
@@ -111,38 +104,20 @@ const ConfiguracoesView = {
     async adicionarCanal() {
       if (!this.novoCanal.nome) return;
       try {
-        const { error } = await window.supabase
-          .from("canais")
-          .insert([
-            {
-              nome: this.novoCanal.nome,
-              cor_hex: this.novoCanal.cor_hex,
-              ativo: true,
-            },
-          ]);
-
-        if (!error) {
-          this.$emit("notificar", {
-            titulo: "Canal Criado!",
-            texto: "O novo canal já está disponível para vendas.",
-          });
-          this.novoCanal = { nome: "", cor_hex: "#3b82f6" };
-          this.$emit("refresh");
-        }
+        await apiPost('/api/canais', { nome: this.novoCanal.nome, corHex: this.novoCanal.cor_hex });
+        this.$emit('notificar', { titulo: 'Canal Criado!', texto: 'O novo canal já está disponível para vendas.' });
+        this.novoCanal = { nome: '', cor_hex: '#3b82f6' };
+        this.$emit('refresh');
       } catch (err) {
         console.error(err);
       }
     },
     async excluirCanal(id) {
-      if (
-        !confirm(
-          "Deseja realmente remover este canal? Vendas vinculadas a ele podem perder a referência.",
-        )
-      )
+      if (!confirm('Deseja realmente remover este canal? Vendas vinculadas a ele podem perder a referência.'))
         return;
       try {
-        await window.supabase.from("canais").delete().eq("id", id);
-        this.$emit("refresh");
+        await apiPatch(`/api/canais/${id}/desativar`);
+        this.$emit('refresh');
       } catch (err) {
         console.error(err);
       }

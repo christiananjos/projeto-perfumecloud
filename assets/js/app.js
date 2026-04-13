@@ -5,6 +5,8 @@ import EstoqueView from "./components/Estoque.js";
 import HistoricoView from "./components/Historico.js";
 import ConfiguracoesView from "./components/Configuracoes.js";
 import AnaliseView from "./components/AnaliseView.js";
+import EstrategiaAdsView from "./components/EstrategiaAds.js";
+import { apiGet } from "./api.js";
 
 const { createApp } = Vue;
 
@@ -17,6 +19,7 @@ const app = createApp({
     HistoricoView,
     ConfiguracoesView,
     AnaliseView,
+    EstrategiaAdsView,
   },
   data() {
     return {
@@ -54,6 +57,7 @@ const app = createApp({
           icon: "fa-solid fa-magnifying-glass-chart",
         },
         { id: "configuracoes", label: "Ajustes", icon: "fa-solid fa-gear" },
+        { id: "estrategia-ads", label: "Estratégia Ads", icon: "fa-solid fa-chart-bar" },
       ],
     };
   },
@@ -79,44 +83,25 @@ const app = createApp({
   methods: {
     async carregarDados() {
       try {
-        // 1. Busca configurações de taxas
-        const { data: t } = await window.supabase
-          .from("configuracoes")
-          .select("chave, valor");
-        if (t) {
-          const mapaTaxas = t.reduce(
+        const [configs, canais, produtos, vendas] = await Promise.all([
+          apiGet('/api/configuracoes'),
+          apiGet('/api/canais'),
+          apiGet('/api/produtos'),
+          apiGet('/api/vendas'),
+        ]);
+
+        if (configs) {
+          const mapaTaxas = configs.reduce(
             (acc, i) => ({ ...acc, [i.chave]: Number(i.valor) }),
             {},
           );
           this.taxas = { ...this.taxas, ...mapaTaxas };
         }
-
-        // 2. BUSCA OS CANAIS (NOVA TABELA)
-        const { data: c, error: errorC } = await window.supabase
-          .from("canais")
-          .select("*")
-          .eq("ativo", true)
-          .order("id");
-        if (errorC) throw errorC;
-        this.canais = c || [];
-
-        // 3. Busca Produtos
-        const { data: p, error: errorP } = await window.supabase
-          .from("produtos")
-          .select("*")
-          .order("nome");
-        if (errorP) throw errorP;
-        this.produtos = p || [];
-
-        // 4. Busca Vendas (O select "*" já deve trazer o canal_id agora)
-        const { data: v, error: errorV } = await window.supabase
-          .from("vendas")
-          .select("*")
-          .order("created_at", { ascending: false });
-        if (errorV) throw errorV;
-        this.vendas = v || [];
+        this.canais  = canais  || [];
+        this.produtos = produtos || [];
+        this.vendas  = vendas  || [];
       } catch (err) {
-        console.error("Erro ao carregar dados:", err);
+        console.error('Erro ao carregar dados:', err);
       }
     },
     navegar(t) {
@@ -135,19 +120,23 @@ const app = createApp({
     async fazerLogout() {
       try {
         await window.supabase.auth.signOut();
-        this.session = null;
-        this.userRole = "vendedor";
-        this.telaAtual = "dashboard";
-        this.produtos = [];
-        this.vendas = [];
-        this.canais = [];
+        window.apiToken = null;
+        localStorage.removeItem('apiToken');
       } catch (error) {
-        console.error("Erro ao sair", error);
+        console.error('Erro ao sair', error);
+      } finally {
         this.session = null;
+        this.userRole = 'vendedor';
+        this.telaAtual = 'dashboard';
+        this.produtos = [];
+        this.vendas   = [];
+        this.canais   = [];
       }
     },
   },
   async mounted() {
+    const token = localStorage.getItem('apiToken');
+    if (token) window.apiToken = token;
     const { data } = await window.supabase.auth.getSession();
     if (data.session) this.onLogin(data.session);
   },

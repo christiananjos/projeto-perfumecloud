@@ -1,4 +1,6 @@
-const EstoqueView = {
+import { apiPost, apiPut, apiPatch } from '../api.js';
+
+
   template: `
     <div class="animate-fade-in flex flex-col mx-auto w-full md:max-w-6xl h-[92vh] md:h-auto space-y-3 md:space-y-8 pt-2">
         <div class="flex justify-between items-center px-4 shrink-0">
@@ -224,16 +226,15 @@ const EstoqueView = {
           inspiracao: p.inspiracao || "",
           custo: Number(p.custo),
           margem: Number(p.margem || 10),
-          preco_suger_ml: Number(p.preco_suger_ml),
-          preco_suger_shopee: Number(p.preco_suger_shopee || 0),
-          // MAPEAMENTO CORRETO DAS TAXAS DO BANCO
+          preco_suger_ml: Number(p.precoSugerMl),
+          preco_suger_shopee: Number(p.precoSugerShopee || 0),
           taxa_ml:
-            p.mktp_taxa_override !== null
-              ? Number(p.mktp_taxa_override)
+            p.mktpTaxaOverride !== null
+              ? Number(p.mktpTaxaOverride)
               : this.taxas.ml_comissao,
           frete_fixo:
-            p.mktp_frete_override !== null
-              ? Number(p.mktp_frete_override)
+            p.mktpFreteOverride !== null
+              ? Number(p.mktpFreteOverride)
               : this.taxas.ml_frete,
         };
       } else {
@@ -260,25 +261,22 @@ const EstoqueView = {
         inspiracao: this.form.inspiracao,
         custo: this.form.custo,
         margem: this.form.margem,
-        preco_suger_ml: this.form.preco_suger_ml,
-        preco_suger_shopee: this.form.preco_suger_shopee,
-        mktp_taxa_override: this.form.taxa_ml,
-        mktp_frete_override: this.form.frete_fixo,
-        ativo: true,
+        precoSugerMl: this.form.preco_suger_ml,
+        precoSugerShopee: this.form.preco_suger_shopee,
+        mktpTaxaOverride: this.form.taxa_ml,
+        mktpFreteOverride: this.form.frete_fixo,
       };
       if (this.modoEdicao)
-        await window.supabase
-          .from("produtos")
-          .update(payload)
-          .eq("id", this.idSendoEditado);
-      else await window.supabase.from("produtos").insert([payload]);
-      this.$emit("refresh");
+        await apiPut(`/api/produtos/${this.idSendoEditado}`, payload);
+      else
+        await apiPost('/api/produtos', payload);
+      this.$emit('refresh');
       this.fecharModal();
     },
     async excluir(id) {
-      if (confirm("Excluir item?")) {
-        await window.supabase.from("produtos").delete().eq("id", id);
-        this.$emit("refresh");
+      if (confirm('Excluir item?')) {
+        await apiPatch(`/api/produtos/${id}/inativar`);
+        this.$emit('refresh');
       }
     },
   },
