@@ -1,6 +1,6 @@
-import { apiPut, apiDelete } from '../api.js';
+import { apiPut, apiDelete } from "../api.js";
 
-
+const HistoricoView = {
   template: `
     <div class="animate-fade-in flex flex-col mx-auto w-full md:max-w-6xl h-[92vh] md:h-auto space-y-3 md:space-y-8 pt-2 text-left">
         
@@ -207,14 +207,14 @@ import { apiPut, apiDelete } from '../api.js';
       try {
         const f = this.editModal.form;
         await apiPut(`/api/vendas/${f.id}`, {
-          quantidade:          f.quantidade,
-          precoVendaUnitario:  f.precoVendaUnitario,
-          canalId:             f.canalId,
-          canalNome:           f.canal,
-          mlOrderId:           f.mlOrderId,
-          trackingCode:        f.trackingCode ? f.trackingCode.toUpperCase() : null,
+          quantidade: f.quantidade,
+          precoVendaUnitario: f.precoVendaUnitario,
+          canalId: f.canalId,
+          canalNome: f.canal,
+          mlOrderId: f.mlOrderId,
+          trackingCode: f.trackingCode ? f.trackingCode.toUpperCase() : null,
         });
-        this.$emit('refresh');
+        this.$emit("refresh");
         this.editModal.aberto = false;
       } catch (err) {
         console.error(err);
@@ -228,7 +228,7 @@ import { apiPut, apiDelete } from '../api.js';
     async confirmarExclusao() {
       try {
         await apiDelete(`/api/vendas/${this.confirmModal.idParaExcluir}`);
-        this.$emit('refresh');
+        this.$emit("refresh");
       } catch (err) {
         console.error(err);
       } finally {
