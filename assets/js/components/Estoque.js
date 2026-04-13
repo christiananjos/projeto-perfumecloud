@@ -1,6 +1,6 @@
-import { apiPost, apiPut, apiPatch } from '../api.js';
+import { apiPost, apiPut, apiPatch } from "../api.js";
 
-
+const EstoqueView = {
   template: `
     <div class="animate-fade-in flex flex-col mx-auto w-full md:max-w-6xl h-[92vh] md:h-auto space-y-3 md:space-y-8 pt-2">
         <div class="flex justify-between items-center px-4 shrink-0">
@@ -268,15 +268,14 @@ import { apiPost, apiPut, apiPatch } from '../api.js';
       };
       if (this.modoEdicao)
         await apiPut(`/api/produtos/${this.idSendoEditado}`, payload);
-      else
-        await apiPost('/api/produtos', payload);
-      this.$emit('refresh');
+      else await apiPost("/api/produtos", payload);
+      this.$emit("refresh");
       this.fecharModal();
     },
     async excluir(id) {
-      if (confirm('Excluir item?')) {
+      if (confirm("Excluir item?")) {
         await apiPatch(`/api/produtos/${id}/inativar`);
-        this.$emit('refresh');
+        this.$emit("refresh");
       }
     },
   },
