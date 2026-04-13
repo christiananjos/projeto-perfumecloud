@@ -1,6 +1,6 @@
-import { apiPost } from '../api.js';
+import { apiPost } from "../api.js";
 
-
+const VenderView = {
   template: `
     <div class="flex flex-col items-center justify-center min-h-[85vh] md:min-h-[70vh] animate-fade-in px-4 text-left">
         <div class="w-full max-w-lg bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-6 md:p-10 space-y-6 md:space-y-8">
@@ -141,7 +141,7 @@ import { apiPost } from '../api.js';
         this.form.precoRecebido * this.form.quantidade,
       );
 
-      const { error } = await apiPost('/api/vendas', {
+      const { error } = await apiPost("/api/vendas", {
         produtoId: this.form.produtoId,
         quantidade: this.form.quantidade,
         precoVendaUnitario: this.form.precoRecebido,
@@ -149,8 +149,9 @@ import { apiPost } from '../api.js';
         canalNome: canalObj.nome,
         mlOrderId: this.form.mlOrderId || null,
         trackingCode: this.form.trackingCode?.toUpperCase() || null,
-      }).then(() => ({ error: null })).catch(err => ({ error: err }));
-
+      })
+        .then(() => ({ error: null }))
+        .catch((err) => ({ error: err }));
 
       if (!error) {
         this.$emit("notificar", {
