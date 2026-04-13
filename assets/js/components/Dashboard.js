@@ -52,10 +52,10 @@ const DashboardView = {
       const grupos = {};
 
       this.vendas.forEach((v) => {
-        const nomeOriginal = v.nome_produto_snapshot || "Produto";
+        const nomeOriginal = v.nomeProdutoSnapshot || "Produto";
         // Normalizamos a chave para o agrupamento (Case Insensitive)
         const chaveAgrupamento = nomeOriginal.trim().toUpperCase();
-        const lucro = Number(v.lucro_liquido || 0);
+        const lucro = Number(v.lucroLiquido || 0);
 
         if (!grupos[chaveAgrupamento]) {
           grupos[chaveAgrupamento] = {

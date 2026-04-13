@@ -57,7 +57,11 @@ const app = createApp({
           icon: "fa-solid fa-magnifying-glass-chart",
         },
         { id: "configuracoes", label: "Ajustes", icon: "fa-solid fa-gear" },
-        { id: "estrategia-ads", label: "Estratégia Ads", icon: "fa-solid fa-chart-bar" },
+        {
+          id: "estrategia-ads",
+          label: "Estratégia Ads",
+          icon: "fa-solid fa-chart-bar",
+        },
       ],
     };
   },
@@ -66,11 +70,11 @@ const app = createApp({
       if (!this.vendas || this.vendas.length === 0)
         return { lucro: 0, faturamento: 0, qtdVendas: 0 };
       const lucroTotal = this.vendas.reduce(
-        (acc, v) => acc + Number(v.lucro_liquido || 0),
+        (acc, v) => acc + Number(v.lucroLiquido || 0),
         0,
       );
       const faturamentoTotal = this.vendas.reduce(
-        (acc, v) => acc + Number(v.faturamento_total || 0),
+        (acc, v) => acc + Number(v.faturamentoTotal || 0),
         0,
       );
       return {
@@ -84,10 +88,10 @@ const app = createApp({
     async carregarDados() {
       try {
         const [configs, canais, produtos, vendas] = await Promise.all([
-          apiGet('/api/configuracoes'),
-          apiGet('/api/canais'),
-          apiGet('/api/produtos'),
-          apiGet('/api/vendas'),
+          apiGet("/api/configuracoes"),
+          apiGet("/api/canais"),
+          apiGet("/api/produtos"),
+          apiGet("/api/vendas"),
         ]);
 
         if (configs) {
@@ -97,11 +101,11 @@ const app = createApp({
           );
           this.taxas = { ...this.taxas, ...mapaTaxas };
         }
-        this.canais  = canais  || [];
+        this.canais = canais || [];
         this.produtos = produtos || [];
-        this.vendas  = vendas  || [];
+        this.vendas = vendas || [];
       } catch (err) {
-        console.error('Erro ao carregar dados:', err);
+        console.error("Erro ao carregar dados:", err);
       }
     },
     navegar(t) {
@@ -121,21 +125,21 @@ const app = createApp({
       try {
         await window.supabase.auth.signOut();
         window.apiToken = null;
-        localStorage.removeItem('apiToken');
+        localStorage.removeItem("apiToken");
       } catch (error) {
-        console.error('Erro ao sair', error);
+        console.error("Erro ao sair", error);
       } finally {
         this.session = null;
-        this.userRole = 'vendedor';
-        this.telaAtual = 'dashboard';
+        this.userRole = "vendedor";
+        this.telaAtual = "dashboard";
         this.produtos = [];
-        this.vendas   = [];
-        this.canais   = [];
+        this.vendas = [];
+        this.canais = [];
       }
     },
   },
   async mounted() {
-    const token = localStorage.getItem('apiToken');
+    const token = localStorage.getItem("apiToken");
     if (token) window.apiToken = token;
     const { data } = await window.supabase.auth.getSession();
     if (data.session) this.onLogin(data.session);

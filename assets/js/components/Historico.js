@@ -38,18 +38,18 @@ const HistoricoView = {
                     <tbody class="divide-y divide-gray-50 font-bold">
                         <tr v-for="v in paginados" :key="v.id" class="hover:bg-slate-50 transition-colors h-[12%] md:h-auto">
                             <td class="py-2 md:py-5 px-4 md:px-6 text-[10px] md:text-xs text-gray-400 italic">
-                                {{ new Date(v.created_at).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}) }}
+                                {{ new Date(v.createdAt).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}) }}
                             </td>
                             <td class="py-2 md:py-5 px-4 md:px-6">
                                 <div class="flex flex-col text-left">
-                                    <span class="text-slate-700 font-black truncate text-[11px] md:text-sm uppercase tracking-tighter">{{ v.nome_produto_snapshot }}</span>
+                                    <span class="text-slate-700 font-black truncate text-[11px] md:text-sm uppercase tracking-tighter">{{ v.nomeProdutoSnapshot }}</span>
                                     <div class="md:hidden flex flex-wrap items-center gap-1 mt-1 font-bold text-[8px]">
                                         <span :class="v.canal === 'SHOPEE' ? 'text-orange-600' : 'text-orange-400'" class="uppercase italic">
                                             [{{ v.canal }}]
                                         </span>
-                                        <span v-if="v.ml_order_id" class="text-slate-500">#{{ v.ml_order_id }}</span>
-                                        <span v-if="v.tracking_code" class="text-blue-500 uppercase">| {{ v.tracking_code }}</span>
-                                        <span class="text-emerald-600 font-black">| R$ {{ (v.lucro_liquido || 0).toFixed(2) }}</span>
+                                        <span v-if="v.mlOrderId" class="text-slate-500">#{{ v.mlOrderId }}</span>
+                                        <span v-if="v.trackingCode" class="text-blue-500 uppercase">| {{ v.trackingCode }}</span>
+                                        <span class="text-emerald-600 font-black">| R$ {{ (v.lucroLiquido || 0).toFixed(2) }}</span>
                                     </div>
                                 </div>
                             </td>
@@ -60,17 +60,17 @@ const HistoricoView = {
                                               class="px-2 py-0.5 rounded text-[8px] font-black uppercase border italic">
                                             {{ v.canal }}
                                         </span>
-                                        <span v-if="v.ml_order_id" class="text-[10px] text-slate-400 font-black italic uppercase">
-                                            #{{ v.ml_order_id }}
+                                        <span v-if="v.mlOrderId" class="text-[10px] text-slate-400 font-black italic uppercase">
+                                            #{{ v.mlOrderId }}
                                         </span>
                                     </div>
-                                    <button v-if="v.tracking_code" @click="copiarCodigo(v.tracking_code)" class="text-[9px] text-blue-500 font-bold flex items-center gap-1 hover:text-blue-700 tracking-tighter">
-                                        <i class="fa-solid fa-truck-fast"></i> {{ v.tracking_code }}
+                                    <button v-if="v.trackingCode" @click="copiarCodigo(v.trackingCode)" class="text-[9px] text-blue-500 font-bold flex items-center gap-1 hover:text-blue-700 tracking-tighter">
+                                        <i class="fa-solid fa-truck-fast"></i> {{ v.trackingCode }}
                                     </button>
                                 </div>
                             </td>
                             <td class="py-5 px-6 hidden md:table-cell text-right text-emerald-600 font-black italic text-sm">
-                                R$ {{ (v.lucro_liquido || 0).toFixed(2) }}
+                                R$ {{ (v.lucroLiquido || 0).toFixed(2) }}
                             </td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
                                 <div class="flex items-center justify-center gap-3">
@@ -96,7 +96,7 @@ const HistoricoView = {
             <div class="bg-white rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl animate-fade-in">
                 <div class="text-center mb-6">
                     <h3 class="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Ajustar Venda</h3>
-                    <p class="text-[10px] font-bold text-blue-500 uppercase">{{ editModal.form.nome_produto_snapshot }}</p>
+                    <p class="text-[10px] font-bold text-blue-500 uppercase">{{ editModal.form.nomeProdutoSnapshot }}</p>
                 </div>
 
                 <div class="space-y-4">
@@ -107,7 +107,7 @@ const HistoricoView = {
                         </div>
                         <div class="space-y-1">
                             <label class="text-[9px] text-orange-500 uppercase ml-2 italic">Entrada Unit. (R$)</label>
-                            <input v-model.number="editModal.form.preco_venda_unitario" type="number" step="0.01" class="input-soft border-orange-100">
+                            <input v-model.number="editModal.form.precoVendaUnitario" type="number" step="0.01" class="input-soft border-orange-100">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 font-bold">
@@ -126,13 +126,13 @@ const HistoricoView = {
                     <div class="space-y-1 font-bold">
                         <label class="text-[9px] text-gray-400 uppercase ml-2">ID Pedido / Rastreio</label>
                         <div class="grid grid-cols-2 gap-2">
-                            <input v-model="editModal.form.ml_order_id" type="text" placeholder="ID" class="input-soft uppercase text-[10px]">
-                            <input v-model="editModal.form.tracking_code" type="text" placeholder="Rastreio" class="input-soft uppercase text-[10px]">
+                            <input v-model="editModal.form.mlOrderId" type="text" placeholder="ID" class="input-soft uppercase text-[10px]">
+                            <input v-model="editModal.form.trackingCode" type="text" placeholder="Rastreio" class="input-soft uppercase text-[10px]">
                         </div>
                     </div>
                     <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 shadow-inner">
                         <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none">Lucro Líquido Calculado</p>
-                        <p class="text-2xl font-black text-emerald-700 mt-1">R$ {{ ((editModal.form.preco_venda_unitario - editModal.custo_manual) * editModal.form.quantidade).toFixed(2) }}</p>
+                        <p class="text-2xl font-black text-emerald-700 mt-1">R$ {{ ((editModal.form.precoVendaUnitario - editModal.custo_manual) * editModal.form.quantidade).toFixed(2) }}</p>
                     </div>
                 </div>
                 <div class="flex gap-4 mt-8">
