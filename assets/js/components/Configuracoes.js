@@ -98,19 +98,21 @@ const ConfiguracoesView = {
     async salvarTaxas() {
       if (!this.isAdmin) return;
       try {
-        await apiPut("/api/configuracoes", {
-          chave: "ml_comissao",
-          valor: this.localTaxas.ml_comissao,
-        });
-        await apiPut("/api/configuracoes", {
-          chave: "ml_frete",
-          valor: this.localTaxas.ml_frete,
-        });
+        await Promise.all([
+          apiPut("/api/configuracoes", {
+            chave: "ml_comissao",
+            valor: this.localTaxas.ml_comissao,
+          }),
+          apiPut("/api/configuracoes", {
+            chave: "ml_frete",
+            valor: this.localTaxas.ml_frete,
+          }),
+        ]);
         this.$emit("notificar", {
           titulo: "Sucesso!",
           texto: "Taxas atualizadas.",
         });
-        this.$emit("refresh");
+        this.$emit("refresh", "configuracoes");
       } catch (err) {
         console.error(err);
       }
@@ -127,7 +129,7 @@ const ConfiguracoesView = {
           texto: "O novo canal já está disponível para vendas.",
         });
         this.novoCanal = { nome: "", corHex: "#3b82f6" };
-        this.$emit("refresh");
+        this.$emit("refresh", "canais");
       } catch (err) {
         console.error(err);
       }
@@ -141,7 +143,7 @@ const ConfiguracoesView = {
         return;
       try {
         await apiPatch(`/api/canais/${id}/desativar`);
-        this.$emit("refresh");
+        this.$emit("refresh", "canais");
       } catch (err) {
         console.error(err);
       }

@@ -167,7 +167,7 @@ const VenderView = {
           titulo: "Sucesso!",
           texto: `Venda ${canalObj.nome.toUpperCase()} registrada com sucesso.`,
         });
-        this.$emit("refresh");
+        this.$emit("refresh", "vendas");
         this.inputBusca = "";
         this.form = {
           canalId: this.form.canalId,

@@ -217,7 +217,7 @@ const HistoricoView = {
           mlOrderId: f.mlOrderId,
           trackingCode: f.trackingCode ? f.trackingCode.toUpperCase() : null,
         });
-        this.$emit("refresh");
+        this.$emit("refresh", "vendas");
         this.editModal.aberto = false;
       } catch (err) {
         console.error(err);
@@ -231,7 +231,7 @@ const HistoricoView = {
     async confirmarExclusao() {
       try {
         await apiDelete(`/api/vendas/${this.confirmModal.idParaExcluir}`);
-        this.$emit("refresh");
+        this.$emit("refresh", "vendas");
       } catch (err) {
         console.error(err);
       } finally {
