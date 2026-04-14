@@ -92,25 +92,37 @@ const app = createApp({
     },
   },
   methods: {
-    async carregarDados() {
+    async carregarDados(scope = "all") {
       try {
+        const precisaConfigs = scope === "all" || scope === "configuracoes";
+        const precisaCanais =
+          scope === "all" || scope === "configuracoes" || scope === "canais";
+        const precisaProdutos = scope === "all" || scope === "produtos";
+        const precisaVendas = scope === "all" || scope === "vendas";
+
         const [configs, canais, produtos, vendas] = await Promise.all([
-          apiGet("/api/configuracoes"),
-          apiGet("/api/canais"),
-          apiGet("/api/produtos"),
-          apiGet("/api/vendas"),
+          precisaConfigs ? apiGet("/api/configuracoes") : Promise.resolve(null),
+          precisaCanais ? apiGet("/api/canais") : Promise.resolve(null),
+          precisaProdutos ? apiGet("/api/produtos") : Promise.resolve(null),
+          precisaVendas ? apiGet("/api/vendas") : Promise.resolve(null),
         ]);
 
-        if (configs) {
+        if (precisaConfigs && configs) {
           const mapaTaxas = configs.reduce(
             (acc, i) => ({ ...acc, [i.chave]: Number(i.valor) }),
             {},
           );
           this.taxas = { ...this.taxas, ...mapaTaxas };
         }
-        this.canais = (canais || []).map(normalizeCanal);
-        this.produtos = produtos || [];
-        this.vendas = vendas || [];
+        if (precisaCanais) {
+          this.canais = (canais || []).map(normalizeCanal);
+        }
+        if (precisaProdutos) {
+          this.produtos = produtos || [];
+        }
+        if (precisaVendas) {
+          this.vendas = vendas || [];
+        }
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
         if (err.message?.includes("Sessão") || err.message?.includes("token")) {

@@ -69,33 +69,33 @@ const EstoqueView = {
                 <div class="space-y-4 text-left">
                     <div class="space-y-1">
                         <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Nome do Produto</label>
-                        <input v-model="form.nome" type="text" class="input-soft">
+                    <input v-model.trim="form.nome" type="text" class="input-soft" :disabled="salvando">
                     </div>
 
                     <div class="space-y-1">
                         <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Inspiração / Cor / Variação</label>
-                        <input v-model="form.inspiracao" type="text" class="input-soft">
+                    <input v-model.trim="form.inspiracao" type="text" class="input-soft" :disabled="salvando">
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-1">
                             <label class="text-[9px] font-bold text-blue-500 uppercase ml-2 italic">Custo (R$)</label>
-                            <input v-model.number="form.custo" type="number" step="0.01" @input="autoCalcularTudo" class="input-soft font-bold">
+                            <input v-model.number="form.custo" type="number" step="0.01" min="0" @input="autoCalcularTudo" class="input-soft font-bold" :disabled="salvando">
                         </div>
                         <div class="space-y-1">
                             <label class="text-[9px] font-bold text-emerald-500 uppercase ml-2 italic">Margem (%)</label>
-                            <input v-model.number="form.margem" type="number" @input="autoCalcularTudo" class="input-soft font-bold !text-emerald-600">
+                            <input v-model.number="form.margem" type="number" min="0" @input="autoCalcularTudo" class="input-soft font-bold !text-emerald-600" :disabled="salvando">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
                         <div class="space-y-1">
                             <label class="text-[9px] font-black text-slate-500 uppercase ml-2">Taxa ML (%)</label>
-                            <input v-model.number="form.taxa_ml" type="number" step="0.01" @input="autoCalcularTudo" class="input-soft !bg-white">
+                            <input v-model.number="form.taxa_ml" type="number" step="0.01" min="0" max="99.99" @input="autoCalcularTudo" class="input-soft !bg-white" :disabled="salvando">
                         </div>
                         <div class="space-y-1">
                             <label class="text-[9px] font-black text-slate-500 uppercase ml-2">Frete ML (R$)</label>
-                            <input v-model.number="form.frete_fixo" type="number" step="0.01" @input="autoCalcularTudo" class="input-soft !bg-white">
+                            <input v-model.number="form.frete_fixo" type="number" step="0.01" min="0" @input="autoCalcularTudo" class="input-soft !bg-white" :disabled="salvando">
                         </div>
                     </div>
 
@@ -104,17 +104,22 @@ const EstoqueView = {
                             <label class="text-[9px] font-bold text-orange-600 uppercase ml-2 italic font-black">Sugestão ML</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-orange-300">R$</span>
-                                <input v-model.number="form.preco_suger_ml" type="number" step="0.01" class="input-soft !pl-8 border-orange-100 text-orange-600 font-bold">
+                                <input v-model.number="form.preco_suger_ml" type="number" step="0.01" min="0" class="input-soft !pl-8 border-orange-100 text-orange-600 font-bold" :disabled="salvando">
                             </div>
                         </div>
                         <div class="space-y-1">
                             <label class="text-[9px] font-bold text-orange-400 uppercase ml-2 italic font-black">Sugestão Shopee</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-orange-200">R$</span>
-                                <input v-model.number="form.preco_suger_shopee" type="number" step="0.01" class="input-soft !pl-8 border-orange-50 text-orange-500 font-bold">
+                                <input v-model.number="form.preco_suger_shopee" type="number" step="0.01" min="0" class="input-soft !pl-8 border-orange-50 text-orange-500 font-bold" :disabled="salvando">
                             </div>
                         </div>
                     </div>
+
+                          <div v-if="erroFormulario" class="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-2xl flex items-start gap-3 animate-fade-in">
+                            <i class="fa-solid fa-circle-exclamation text-sm mt-0.5"></i>
+                            <span class="text-xs font-bold uppercase tracking-tight">{{ erroFormulario }}</span>
+                          </div>
 
                     <div class="bg-slate-900 rounded-2xl p-4 text-[9px] font-bold uppercase tracking-widest text-white/70">
                         <div class="flex justify-between items-center">
@@ -124,8 +129,10 @@ const EstoqueView = {
                     </div>
                 </div>
                 <div class="flex gap-4 mt-8">
-                    <button @click="fecharModal" class="flex-1 font-bold text-gray-400 uppercase text-[10px]">Cancelar</button>
-                    <button @click="salvar" class="flex-1 btn-primary text-xs uppercase font-black tracking-widest">Confirmar</button>
+                  <button @click="fecharModal" :disabled="salvando" class="flex-1 font-bold text-gray-400 uppercase text-[10px] disabled:opacity-50">Cancelar</button>
+                  <button @click="salvar" :disabled="salvando" class="flex-1 btn-primary text-xs uppercase font-black tracking-widest disabled:opacity-50">
+                    {{ salvando ? 'Salvando...' : 'Confirmar' }}
+                  </button>
                 </div>
             </div>
         </div>
@@ -138,6 +145,8 @@ const EstoqueView = {
       filtros: { busca: "", precoMax: null },
       modal: { aberto: false },
       modoEdicao: false,
+      salvando: false,
+      erroFormulario: "",
       idSendoEditado: null,
       form: {
         nome: "",
@@ -176,20 +185,26 @@ const EstoqueView = {
     },
   },
   methods: {
+    toValidNumber(value, fallback = 0) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    },
     autoCalcularTudo() {
-      const custo = Number(this.form.custo) || 0;
-      const margemProd = 1 + Number(this.form.margem) / 100;
+      const custo = this.toValidNumber(this.form.custo);
+      const margem = this.toValidNumber(this.form.margem, 10);
+      const margemProd = 1 + margem / 100;
 
-      // LÓGICA ML USANDO VALORES DO FORMULÁRIO (DINÂMICOS)
-      const taxaML = Number(this.form.taxa_ml) / 100;
-      const freteML = Number(this.form.frete_fixo);
+      const taxaMLPercentual = this.toValidNumber(this.form.taxa_ml);
+      const taxaML = Math.min(Math.max(taxaMLPercentual, 0), 99.99) / 100;
+      const freteML = Math.max(this.toValidNumber(this.form.frete_fixo), 0);
 
       const vML = (custo * margemProd + freteML) / (1 - taxaML);
-      this.form.preco_suger_ml = Number(vML.toFixed(2));
+      this.form.preco_suger_ml = Number.isFinite(vML)
+        ? Number(vML.toFixed(2))
+        : 0;
 
-      // LÓGICA SHOPEE 2026
       this.form.preco_suger_shopee = Number(
-        this.calcularPrecoShopee(custo, this.form.margem),
+        this.calcularPrecoShopee(custo, margem),
       );
     },
     calcularPrecoShopee(custo, margem) {
@@ -221,6 +236,7 @@ const EstoqueView = {
       return tentativa4.toFixed(2);
     },
     abrirModal(p = null) {
+      this.erroFormulario = "";
       if (p) {
         this.modoEdicao = true;
         this.idSendoEditado = p.id;
@@ -242,6 +258,7 @@ const EstoqueView = {
         };
       } else {
         this.modoEdicao = false;
+        this.idSendoEditado = null;
         this.form = {
           nome: "",
           inspiracao: "",
@@ -252,33 +269,78 @@ const EstoqueView = {
           taxa_ml: this.taxas.ml_comissao,
           frete_fixo: this.taxas.ml_frete,
         };
+        this.autoCalcularTudo();
       }
       this.modal.aberto = true;
     },
     fecharModal() {
+      if (this.salvando) return;
       this.modal.aberto = false;
     },
+    validarFormulario() {
+      const nome = (this.form.nome || "").trim();
+      const custo = this.toValidNumber(this.form.custo, -1);
+      const margem = this.toValidNumber(this.form.margem, -1);
+      const taxaMl = this.toValidNumber(this.form.taxa_ml, -1);
+      const frete = this.toValidNumber(this.form.frete_fixo, -1);
+      const precoMl = this.toValidNumber(this.form.preco_suger_ml, -1);
+      const precoShopee = this.toValidNumber(this.form.preco_suger_shopee, -1);
+
+      if (!nome) return "Informe o nome do produto antes de salvar.";
+      if (custo <= 0) return "Informe um custo maior que zero.";
+      if (margem < 0) return "A margem precisa ser igual ou maior que zero.";
+      if (taxaMl < 0 || taxaMl >= 100)
+        return "A taxa do Mercado Livre deve ficar entre 0 e 99,99.";
+      if (frete < 0) return "O frete fixo não pode ser negativo.";
+      if (precoMl <= 0)
+        return "A sugestão de preço do Mercado Livre precisa ser maior que zero.";
+      if (precoShopee <= 0)
+        return "A sugestão de preço da Shopee precisa ser maior que zero.";
+
+      return "";
+    },
     async salvar() {
+      this.erroFormulario = this.validarFormulario();
+      if (this.erroFormulario) return;
+
       const payload = {
-        nome: this.form.nome,
-        inspiracao: this.form.inspiracao,
-        custo: this.form.custo,
-        margem: this.form.margem,
-        precoSugerMl: this.form.preco_suger_ml,
-        precoSugerShopee: this.form.preco_suger_shopee,
-        mktpTaxaOverride: this.form.taxa_ml,
-        mktpFreteOverride: this.form.frete_fixo,
+        nome: this.form.nome.trim(),
+        inspiracao: (this.form.inspiracao || "").trim() || null,
+        custo: this.toValidNumber(this.form.custo),
+        margem: this.toValidNumber(this.form.margem, 10),
+        precoSugerMl: this.toValidNumber(this.form.preco_suger_ml),
+        precoSugerShopee: this.toValidNumber(this.form.preco_suger_shopee),
+        mktpTaxaOverride: this.toValidNumber(this.form.taxa_ml),
+        mktpFreteOverride: this.toValidNumber(this.form.frete_fixo),
       };
-      if (this.modoEdicao)
-        await apiPut(`/api/produtos/${this.idSendoEditado}`, payload);
-      else await apiPost("/api/produtos", payload);
-      this.$emit("refresh");
-      this.fecharModal();
+
+      this.salvando = true;
+      try {
+        if (this.modoEdicao) {
+          await apiPut(`/api/produtos/${this.idSendoEditado}`, payload);
+        } else {
+          await apiPost("/api/produtos", payload);
+        }
+
+        this.$emit("notificar", {
+          titulo: "Sucesso!",
+          texto: this.modoEdicao
+            ? "Produto atualizado com sucesso."
+            : "Produto cadastrado com sucesso.",
+        });
+        this.$emit("refresh", "produtos");
+        this.modal.aberto = false;
+      } catch (err) {
+        this.erroFormulario =
+          err.message || "Não foi possível salvar o produto.";
+      } finally {
+        this.salvando = false;
+      }
     },
     async excluir(id) {
       if (confirm("Excluir item?")) {
         await apiPatch(`/api/produtos/${id}/inativar`);
-        this.$emit("refresh");
+        this.$emit("refresh", "produtos");
       }
     },
   },
