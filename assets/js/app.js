@@ -106,11 +106,11 @@ const app = createApp({
         this.vendas = vendas || [];
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
-        if (err.message?.includes("Sessao") || err.message?.includes("token")) {
+        if (err.message?.includes("Sessão") || err.message?.includes("token")) {
           await this.fazerLogout();
           this.mostrarFeedback({
-            titulo: "Sessao",
-            texto: "Sua sessao expirou. Faca login novamente.",
+            titulo: "Sessão",
+            texto: "Sua sessão expirou. Faça login novamente.",
           });
         }
       }

@@ -136,7 +136,7 @@ async function api(method, endpoint, body = null, isFormData = false) {
     throw new Error(
       data?.mensagem ||
         data?.title ||
-        "Sessao expirada ou token da API invalido",
+        "Sessão expirada ou token da API inválido",
     );
   }
 

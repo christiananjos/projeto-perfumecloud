@@ -76,7 +76,7 @@ const LoginView = {
       try {
         const apiData = await loginApi(emailFake, this.password);
         if (!apiData?.token) {
-          throw new Error("Credenciais invalidas");
+          throw new Error("Credenciais inválidas");
         }
 
         const session = persistAuth(apiData.token) || {
@@ -88,9 +88,9 @@ const LoginView = {
         this.$emit("logged", session);
       } catch (err) {
         this.erro =
-          err.message === "Credenciais invalidas"
+          err.message === "Credenciais inválidas"
             ? "Usuário ou senha inválidos"
-            : "Login do backend falhou. Verifique as variaveis do Azure.";
+            : "Login do backend falhou. Verifique as variáveis do Azure.";
       } finally {
         this.carregando = false;
       }
