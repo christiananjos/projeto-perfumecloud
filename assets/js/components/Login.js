@@ -1,4 +1,4 @@
-import { loginApi } from "../api.js";
+import { loginApi, persistAuth } from "../api.js";
 
 const LoginView = {
   template: `
@@ -74,29 +74,23 @@ const LoginView = {
       const emailFake = this.username.trim().toLowerCase() + this.SUFIXO;
 
       try {
-        const { data, error } = await window.supabase.auth.signInWithPassword({
-          email: emailFake,
-          password: this.password,
-        });
-
-        if (error) throw error;
-
         const apiData = await loginApi(emailFake, this.password);
         if (!apiData?.token) {
-          await window.supabase.auth.signOut();
-          localStorage.removeItem("apiToken");
-          throw new Error("Falha ao obter token da API");
+          throw new Error("Credenciais invalidas");
         }
 
-        window.apiToken = apiData.token;
-        localStorage.setItem("apiToken", apiData.token);
+        const session = persistAuth(apiData.token) || {
+          email: apiData.email || emailFake,
+          role: "Admin",
+          token: apiData.token,
+        };
 
-        this.$emit("logged", data.session);
+        this.$emit("logged", session);
       } catch (err) {
         this.erro =
-          err.message === "Falha ao obter token da API"
-            ? "Login do backend falhou. Verifique as variaveis do Azure."
-            : "Usuário ou senha inválidos";
+          err.message === "Credenciais invalidas"
+            ? "Usuário ou senha inválidos"
+            : "Login do backend falhou. Verifique as variaveis do Azure.";
       } finally {
         this.carregando = false;
       }

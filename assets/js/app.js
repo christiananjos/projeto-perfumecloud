@@ -6,7 +6,7 @@ import HistoricoView from "./components/Historico.js";
 import ConfiguracoesView from "./components/Configuracoes.js";
 import AnaliseView from "./components/AnaliseView.js";
 import EstrategiaAdsView from "./components/EstrategiaAds.js";
-import { apiGet } from "./api.js";
+import { apiGet, clearAuth, getStoredSession } from "./api.js";
 
 const { createApp } = Vue;
 
@@ -106,6 +106,13 @@ const app = createApp({
         this.vendas = vendas || [];
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
+        if (err.message?.includes("Sessao") || err.message?.includes("token")) {
+          await this.fazerLogout();
+          this.mostrarFeedback({
+            titulo: "Sessao",
+            texto: "Sua sessao expirou. Faca login novamente.",
+          });
+        }
       }
     },
     navegar(t) {
@@ -118,31 +125,22 @@ const app = createApp({
     },
     onLogin(s) {
       this.session = s;
-      this.userRole = s.user.app_metadata?.role || "vendedor";
+      this.userRole = s?.role || "Admin";
       this.carregarDados();
     },
     async fazerLogout() {
-      try {
-        await window.supabase.auth.signOut();
-        window.apiToken = null;
-        localStorage.removeItem("apiToken");
-      } catch (error) {
-        console.error("Erro ao sair", error);
-      } finally {
-        this.session = null;
-        this.userRole = "vendedor";
-        this.telaAtual = "dashboard";
-        this.produtos = [];
-        this.vendas = [];
-        this.canais = [];
-      }
+      clearAuth();
+      this.session = null;
+      this.userRole = "vendedor";
+      this.telaAtual = "dashboard";
+      this.produtos = [];
+      this.vendas = [];
+      this.canais = [];
     },
   },
-  async mounted() {
-    const token = localStorage.getItem("apiToken");
-    if (token) window.apiToken = token;
-    const { data } = await window.supabase.auth.getSession();
-    if (data.session) this.onLogin(data.session);
+  mounted() {
+    const session = getStoredSession();
+    if (session) this.onLogin(session);
   },
 });
 

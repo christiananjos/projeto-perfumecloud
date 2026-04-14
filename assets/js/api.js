@@ -1,12 +1,70 @@
 const API_URL = window.API_URL || "http://localhost:5298";
+const AUTH_TOKEN_KEY = "apiToken";
+const AUTH_SESSION_KEY = "apiSession";
+const EMAIL_CLAIM = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress";
+const ROLE_CLAIM = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 
 function getToken() {
-  return window.apiToken || localStorage.getItem("apiToken") || "";
+  return window.apiToken || localStorage.getItem(AUTH_TOKEN_KEY) || "";
 }
 
-function clearToken() {
+function decodeBase64Url(value) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+  return atob(padded);
+}
+
+function buildSessionFromToken(token) {
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) return null;
+
+    const claims = JSON.parse(decodeBase64Url(payload));
+    return {
+      email: claims.email || claims[EMAIL_CLAIM] || "",
+      role: claims.role || claims[ROLE_CLAIM] || "Admin",
+      exp: claims.exp || null,
+      token,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function persistAuth(token) {
+  const session = buildSessionFromToken(token);
+  window.apiToken = token;
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  if (session) {
+    localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+  }
+  return session;
+}
+
+export function getStoredSession() {
+  const token = getToken();
+  if (!token) return null;
+
+  const cachedSession = localStorage.getItem(AUTH_SESSION_KEY);
+  if (cachedSession) {
+    try {
+      return JSON.parse(cachedSession);
+    } catch {
+      localStorage.removeItem(AUTH_SESSION_KEY);
+    }
+  }
+
+  const session = buildSessionFromToken(token);
+  if (session) {
+    localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+  }
+  return session;
+}
+
+export function clearAuth() {
   window.apiToken = null;
-  localStorage.removeItem("apiToken");
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_SESSION_KEY);
 }
 
 async function api(method, endpoint, body = null, isFormData = false) {
@@ -27,7 +85,7 @@ async function api(method, endpoint, body = null, isFormData = false) {
   const data = responseText ? JSON.parse(responseText) : null;
 
   if (res.status === 401) {
-    clearToken();
+    clearAuth();
     throw new Error(
       data?.mensagem ||
         data?.title ||
@@ -55,5 +113,11 @@ export async function loginApi(email, senha) {
   if (!res.ok) return null;
 
   const responseText = await res.text();
-  return responseText ? JSON.parse(responseText) : null;
+  const data = responseText ? JSON.parse(responseText) : null;
+  if (!data?.token) return data;
+
+  return {
+    ...data,
+    session: buildSessionFromToken(data.token),
+  };
 }
