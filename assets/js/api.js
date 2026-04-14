@@ -1,4 +1,6 @@
-const API_URL = window.API_URL || "http://localhost:5298";
+const DEFAULT_API_URL =
+  "https://marketplacemanagement-hzhygwdfaxfnbnga.brazilsouth-01.azurewebsites.net";
+const API_URL = (window.API_URL || DEFAULT_API_URL).replace(/\/$/, "");
 const AUTH_TOKEN_KEY = "apiToken";
 const AUTH_SESSION_KEY = "apiSession";
 const EMAIL_CLAIM =
@@ -27,6 +29,13 @@ function getToken() {
   return window.apiToken || localStorage.getItem(AUTH_TOKEN_KEY) || "";
 }
 
+export function normalizeRole(role) {
+  const normalized = String(role || "")
+    .trim()
+    .toLowerCase();
+  return normalized || "vendedor";
+}
+
 function decodeBase64Url(value) {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
   const padded = normalized.padEnd(
@@ -44,7 +53,7 @@ function buildSessionFromToken(token) {
     const claims = JSON.parse(decodeBase64Url(payload));
     return {
       email: claims.email || claims[EMAIL_CLAIM] || "",
-      role: claims.role || claims[ROLE_CLAIM] || "Admin",
+      role: normalizeRole(claims.role || claims[ROLE_CLAIM] || "admin"),
       exp: claims.exp || null,
       token,
     };
@@ -76,6 +85,16 @@ function normalizeData(value) {
     );
   }
   return value;
+}
+
+function safeParseJson(text) {
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 export function persistAuth(token) {
@@ -129,7 +148,7 @@ async function api(method, endpoint, body = null, isFormData = false) {
   if (res.status === 204) return null;
 
   const responseText = await res.text();
-  const data = responseText ? JSON.parse(responseText) : null;
+  const data = safeParseJson(responseText);
 
   if (res.status === 401) {
     clearAuth();
@@ -144,7 +163,9 @@ async function api(method, endpoint, body = null, isFormData = false) {
 
   if (!res.ok) {
     throw new Error(
-      normalizedData?.mensagem || normalizedData?.title || "Erro na API",
+      normalizedData?.mensagem ||
+        normalizedData?.title ||
+        `Erro ${res.status} ao acessar a API`,
     );
   }
 
@@ -167,7 +188,7 @@ export async function loginApi(email, senha) {
   if (!res.ok) return null;
 
   const responseText = await res.text();
-  const data = responseText ? JSON.parse(responseText) : null;
+  const data = safeParseJson(responseText);
   if (!data?.token) return data;
 
   return {

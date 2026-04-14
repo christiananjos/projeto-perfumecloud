@@ -75,7 +75,7 @@ const HistoricoView = {
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
                                 <div class="flex items-center justify-center gap-3">
                                     <button @click="abrirEdicao(v)" class="text-blue-400 hover:text-blue-600 transition-transform active:scale-90"><i class="fa-solid fa-pen-to-square"></i></button>
-                                    <button @click="solicitarExclusao(v.id)" :class="userRole === 'admin' ? 'text-red-200 hover:text-red-500' : 'text-gray-50 cursor-not-allowed'"><i class="fa-solid fa-trash-can"></i></button>
+                                    <button @click="solicitarExclusao(v.id)" :class="isAdmin ? 'text-red-200 hover:text-red-500' : 'text-gray-50 cursor-not-allowed'"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </td>
                         </tr>
@@ -167,6 +167,9 @@ const HistoricoView = {
     };
   },
   computed: {
+    isAdmin() {
+      return this.userRole === "admin";
+    },
     vendasFiltradas() {
       const t = this.busca.toLowerCase();
       const canal = this.filtroCanal;
@@ -221,7 +224,7 @@ const HistoricoView = {
       }
     },
     solicitarExclusao(id) {
-      if (this.userRole !== "admin") return;
+      if (!this.isAdmin) return;
       this.confirmModal.idParaExcluir = id;
       this.confirmModal.aberto = true;
     },

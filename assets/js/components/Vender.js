@@ -10,7 +10,7 @@ const VenderView = {
                 <div class="flex flex-wrap justify-center gap-2 mt-4">
                     <button v-for="c in canais" :key="c.id"
                         @click="mudarCanal(c)" 
-                        :style="form.canalId === c.id ? { backgroundColor: c.cor_hex, color: 'white' } : {}"
+                      :style="form.canalId === c.id ? { backgroundColor: c.corHex || c.cor_hex, color: 'white' } : {}"
                         :class="form.canalId === c.id ? 'shadow-lg' : 'bg-slate-50 text-slate-400'" 
                         class="px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 border border-transparent">
                         {{ c.nome }}
@@ -93,7 +93,7 @@ const VenderView = {
     return {
       inputBusca: "",
       form: {
-        canalId: 1,
+        canalId: null,
         produtoId: "",
         quantidade: 1,
         precoRecebido: 0,
@@ -101,6 +101,16 @@ const VenderView = {
         trackingCode: "",
       },
     };
+  },
+  watch: {
+    canais: {
+      immediate: true,
+      handler(novosCanais) {
+        if (!this.form.canalId && novosCanais?.length) {
+          this.form.canalId = novosCanais[0].id;
+        }
+      },
+    },
   },
   methods: {
     mudarCanal(canal) {
@@ -134,12 +144,11 @@ const VenderView = {
       );
     },
     async salvar() {
-      const p = this.produtos.find((i) => i.id === this.form.produtoId);
       const canalObj = this.canais.find((c) => c.id === this.form.canalId);
-      const lucroTotal = Number(this.calcularLucroSimples());
-      const faturamentoTotal = Number(
-        this.form.precoRecebido * this.form.quantidade,
-      );
+      if (!canalObj) {
+        alert("Selecione um canal válido antes de salvar.");
+        return;
+      }
 
       const { error } = await apiPost("/api/vendas", {
         produtoId: this.form.produtoId,

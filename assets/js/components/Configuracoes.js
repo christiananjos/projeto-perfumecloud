@@ -17,7 +17,7 @@ const ConfiguracoesView = {
                         <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Comissão Padrão</label>
                     </div>
                     <div class="relative">
-                        <input v-model.number="localTaxas.ml_comissao" type="number" :disabled="userRole !== 'admin'" 
+                           <input v-model.number="localTaxas.ml_comissao" type="number" :disabled="!isAdmin" 
                                class="input-soft !py-4 !text-xl !font-bold border-slate-100">
                         <span class="absolute right-5 top-1/2 -translate-y-1/2 text-sm text-slate-300">%</span>
                     </div>
@@ -29,14 +29,14 @@ const ConfiguracoesView = {
                         <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Frete Fixo Padrão</label>
                     </div>
                     <div class="relative">
-                        <input v-model.number="localTaxas.ml_frete" type="number" step="0.01" :disabled="userRole !== 'admin'" 
+                           <input v-model.number="localTaxas.ml_frete" type="number" step="0.01" :disabled="!isAdmin" 
                                class="input-soft !py-4 !text-xl !font-bold border-slate-100 !pl-12">
                         <span class="absolute left-5 top-1/2 -translate-y-1/2 text-sm text-slate-300 italic">R$</span>
                     </div>
                 </div>
             </div>
             <div class="flex justify-center pt-4">
-                <button v-if="userRole === 'admin'" @click="salvarTaxas" 
+                <button v-if="isAdmin" @click="salvarTaxas" 
                         class="btn-primary px-10 py-4 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100">
                     Atualizar Taxas ML
                 </button>
@@ -49,21 +49,21 @@ const ConfiguracoesView = {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div v-for="c in canais" :key="c.id" class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group">
                     <div class="flex items-center gap-3">
-                        <div :style="{ backgroundColor: c.cor_hex }" class="w-4 h-4 rounded-full shadow-sm"></div>
+                        <div :style="{ backgroundColor: c.corHex || c.cor_hex }" class="w-4 h-4 rounded-full shadow-sm"></div>
                         <span class="font-black text-slate-700 uppercase italic text-xs tracking-tighter">{{ c.nome }}</span>
                     </div>
-                    <button v-if="userRole === 'admin'" @click="excluirCanal(c.id)" class="text-red-200 hover:text-red-500 transition-colors">
+                      <button v-if="isAdmin" @click="excluirCanal(c.id)" class="text-red-200 hover:text-red-500 transition-colors">
                         <i class="fa-solid fa-trash-can text-xs"></i>
                     </button>
                 </div>
             </div>
 
-            <div v-if="userRole === 'admin'" class="bg-blue-50/50 p-6 rounded-[1.5rem] border border-dashed border-blue-200 mt-6">
+                  <div v-if="isAdmin" class="bg-blue-50/50 p-6 rounded-[1.5rem] border border-dashed border-blue-200 mt-6">
                 <p class="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-4 italic">Cadastrar Novo Canal</p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <input v-model="novoCanal.nome" type="text" placeholder="Nome do Canal" class="input-soft !bg-white">
                     <div class="flex items-center gap-2">
-                        <input v-model="novoCanal.cor_hex" type="color" class="w-10 h-10 rounded-lg border-0 cursor-pointer bg-transparent">
+                        <input v-model="novoCanal.corHex" type="color" class="w-10 h-10 rounded-lg border-0 cursor-pointer bg-transparent">
                         <span class="text-[10px] font-bold text-slate-400 uppercase italic">Cor do Badge</span>
                     </div>
                     <button @click="adicionarCanal" class="bg-slate-900 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-800 transition-all">
@@ -86,12 +86,17 @@ const ConfiguracoesView = {
   data() {
     return {
       localTaxas: { ...this.taxas },
-      novoCanal: { nome: "", cor_hex: "#3b82f6" },
+      novoCanal: { nome: "", corHex: "#3b82f6" },
     };
+  },
+  computed: {
+    isAdmin() {
+      return this.userRole === "admin";
+    },
   },
   methods: {
     async salvarTaxas() {
-      if (this.userRole !== "admin") return;
+      if (!this.isAdmin) return;
       try {
         await apiPut("/api/configuracoes", {
           chave: "ml_comissao",
@@ -115,13 +120,13 @@ const ConfiguracoesView = {
       try {
         await apiPost("/api/canais", {
           nome: this.novoCanal.nome,
-          corHex: this.novoCanal.cor_hex,
+          corHex: this.novoCanal.corHex,
         });
         this.$emit("notificar", {
           titulo: "Canal Criado!",
           texto: "O novo canal já está disponível para vendas.",
         });
-        this.novoCanal = { nome: "", cor_hex: "#3b82f6" };
+        this.novoCanal = { nome: "", corHex: "#3b82f6" };
         this.$emit("refresh");
       } catch (err) {
         console.error(err);

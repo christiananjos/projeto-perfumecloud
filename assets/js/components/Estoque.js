@@ -50,8 +50,8 @@ const EstoqueView = {
                             <td class="py-2 md:py-5 px-4 md:px-6 text-right text-orange-400 font-black italic">R$ {{ Number(p.precoSugerShopee || 0).toFixed(2) }}</td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
                                 <div class="flex items-center justify-center gap-2">
-                                    <button @click="userRole === 'admin' ? abrirModal(p) : null" :class="userRole === 'admin' ? 'text-blue-400 hover:text-blue-600' : 'text-gray-200 cursor-not-allowed'"><i class="fa-solid fa-pen-to-square"></i></button>
-                                    <button @click="userRole === 'admin' ? excluir(p.id) : null" :class="userRole === 'admin' ? 'text-red-200 hover:text-red-500' : 'text-gray-100 cursor-not-allowed'"><i class="fa-solid fa-trash-can"></i></button>
+                                    <button @click="isAdmin ? abrirModal(p) : null" :class="isAdmin ? 'text-blue-400 hover:text-blue-600' : 'text-gray-200 cursor-not-allowed'"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button @click="isAdmin ? excluir(p.id) : null" :class="isAdmin ? 'text-red-200 hover:text-red-500' : 'text-gray-100 cursor-not-allowed'"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </td>
                         </tr>
@@ -152,6 +152,9 @@ const EstoqueView = {
     };
   },
   computed: {
+    isAdmin() {
+      return this.userRole === "admin";
+    },
     produtosFiltrados() {
       const t = (this.filtros.busca || "").toLowerCase();
       return this.produtos.filter(

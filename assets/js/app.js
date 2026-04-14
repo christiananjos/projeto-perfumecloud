@@ -6,9 +6,16 @@ import HistoricoView from "./components/Historico.js";
 import ConfiguracoesView from "./components/Configuracoes.js";
 import AnaliseView from "./components/AnaliseView.js";
 import EstrategiaAdsView from "./components/EstrategiaAds.js";
-import { apiGet, clearAuth, getStoredSession } from "./api.js";
+import { apiGet, clearAuth, getStoredSession, normalizeRole } from "./api.js";
 
 const { createApp } = Vue;
+
+function normalizeCanal(canal) {
+  return {
+    ...canal,
+    corHex: canal?.corHex || canal?.cor_hex || "#3b82f6",
+  };
+}
 
 const app = createApp({
   components: {
@@ -101,7 +108,7 @@ const app = createApp({
           );
           this.taxas = { ...this.taxas, ...mapaTaxas };
         }
-        this.canais = canais || [];
+        this.canais = (canais || []).map(normalizeCanal);
         this.produtos = produtos || [];
         this.vendas = vendas || [];
       } catch (err) {
@@ -124,8 +131,8 @@ const app = createApp({
       setTimeout(() => (this.feedback.ativo = false), 3000);
     },
     onLogin(s) {
-      this.session = s;
-      this.userRole = s?.role || "Admin";
+      this.session = { ...s, role: normalizeRole(s?.role) };
+      this.userRole = normalizeRole(s?.role);
       this.carregarDados();
     },
     async fazerLogout() {
