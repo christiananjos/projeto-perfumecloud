@@ -154,6 +154,7 @@ async function api(method, endpoint, body = null, isFormData = false) {
     clearAuth();
     throw new Error(
       data?.mensagem ||
+        data?.detail ||
         data?.title ||
         "Sessão expirada ou token da API inválido",
     );
@@ -164,6 +165,7 @@ async function api(method, endpoint, body = null, isFormData = false) {
   if (!res.ok) {
     throw new Error(
       normalizedData?.mensagem ||
+        normalizedData?.detail ||
         normalizedData?.title ||
         `Erro ${res.status} ao acessar a API`,
     );
