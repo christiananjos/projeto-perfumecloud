@@ -1,8 +1,10 @@
 const API_URL = window.API_URL || "http://localhost:5298";
 const AUTH_TOKEN_KEY = "apiToken";
 const AUTH_SESSION_KEY = "apiSession";
-const EMAIL_CLAIM = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress";
-const ROLE_CLAIM = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+const EMAIL_CLAIM =
+  "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress";
+const ROLE_CLAIM =
+  "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 
 function getToken() {
   return window.apiToken || localStorage.getItem(AUTH_TOKEN_KEY) || "";
@@ -10,7 +12,10 @@ function getToken() {
 
 function decodeBase64Url(value) {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+  const padded = normalized.padEnd(
+    normalized.length + ((4 - (normalized.length % 4)) % 4),
+    "=",
+  );
   return atob(padded);
 }
 
