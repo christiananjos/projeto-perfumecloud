@@ -1,4 +1,4 @@
-import { loginApi } from '../api.js';
+import { loginApi } from "../api.js";
 
 const LoginView = {
   template: `
@@ -82,14 +82,21 @@ const LoginView = {
         if (error) throw error;
 
         const apiData = await loginApi(emailFake, this.password);
-        if (apiData?.token) {
-          window.apiToken = apiData.token;
-          localStorage.setItem('apiToken', apiData.token);
+        if (!apiData?.token) {
+          await window.supabase.auth.signOut();
+          localStorage.removeItem("apiToken");
+          throw new Error("Falha ao obter token da API");
         }
+
+        window.apiToken = apiData.token;
+        localStorage.setItem("apiToken", apiData.token);
 
         this.$emit("logged", data.session);
       } catch (err) {
-        this.erro = "Usuário ou senha inválidos";
+        this.erro =
+          err.message === "Falha ao obter token da API"
+            ? "Login do backend falhou. Verifique as variaveis do Azure."
+            : "Usuário ou senha inválidos";
       } finally {
         this.carregando = false;
       }
