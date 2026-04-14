@@ -1,17 +1,17 @@
-import { apiUpload } from '../api.js';
+import { apiUpload } from "../api.js";
 
 const EstrategiaAdsView = {
   template: `
     <div class="space-y-6 max-w-4xl mx-auto">
 
       <div>
-        <h2 class="text-2xl font-black tracking-tighter text-slate-900">EstratÈgia Ads</h2>
-        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">An·lise de relatÛrios Shopee ∑ Mercado Livre</p>
+        <h2 class="text-2xl font-black tracking-tighter text-slate-900">Estrat√©gia Ads</h2>
+        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">An√°lise de relat√≥rios Shopee ‚Ä¢ Mercado Livre</p>
       </div>
 
       <!-- Upload Card -->
       <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 space-y-6">
-        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">1. Envie o relatÛrio exportado (.csv ou .xlsx)</p>
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">1. Envie o relat√≥rio exportado (.csv ou .xlsx)</p>
 
         <label class="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-200 rounded-2xl p-10 cursor-pointer hover:border-blue-400 transition-colors"
                :class="arquivo ? 'border-blue-400 bg-blue-50' : ''">
@@ -22,7 +22,7 @@ const EstrategiaAdsView = {
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="space-y-1">
-            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estoque FÌsico (opcional)</label>
+            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estoque F√≠sico (opcional)</label>
             <input v-model="estoqueFisico" type="text" placeholder="Ex: 2 Salvo, 3 Club de Nuit" class="input-soft">
           </div>
           <div class="space-y-1">
@@ -34,7 +34,7 @@ const EstrategiaAdsView = {
         <button @click="analisar" :disabled="!arquivo || carregando"
           class="btn-primary w-full py-5 text-sm font-bold uppercase tracking-widest shadow-xl disabled:opacity-50">
           <span v-if="carregando"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Analisando com IA...</span>
-          <span v-else><i class="fa-solid fa-magnifying-glass-chart mr-2"></i>Analisar RelatÛrio</span>
+          <span v-else><i class="fa-solid fa-magnifying-glass-chart mr-2"></i>Analisar Relat√≥rio</span>
         </button>
       </div>
 
@@ -45,18 +45,18 @@ const EstrategiaAdsView = {
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Canal</p>
-            <p class="text-lg font-black text-slate-900">{{ resultado.canal || 'ó' }}</p>
+            <p class="text-lg font-black text-slate-900">{{ resultado.canal || '-' }}</p>
           </div>
           <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">ROAS Geral</p>
             <p class="text-lg font-black" :class="resultado.roasGeral >= 20 ? 'text-emerald-600' : 'text-red-500'">{{ resultado.roasGeral }}x</p>
           </div>
           <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
-            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">PrejuÌzo CrÌtico</p>
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Preju√≠zo Cr√≠tico</p>
             <p class="text-lg font-black text-red-500">{{ resultado.diagnostico?.prejuizoReal?.length || 0 }}</p>
           </div>
           <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
-            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Saud·veis</p>
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Saud√°veis</p>
             <p class="text-lg font-black text-emerald-600">{{ resultado.diagnostico?.lucros?.length || 0 }}</p>
           </div>
         </div>
@@ -67,9 +67,9 @@ const EstrategiaAdsView = {
           <p class="text-sm leading-relaxed text-slate-300">{{ resultado.resumoExecutivo }}</p>
         </div>
 
-        <!-- Tabela de ExecuÁ„o -->
+        <!-- Tabela de Execu√ß√£o -->
         <div class="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Plano de ExecuÁ„o</p>
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Plano de Execu√ß√£o</p>
           <div class="overflow-x-auto">
             <table class="w-full text-xs">
               <thead>
@@ -78,7 +78,7 @@ const EstrategiaAdsView = {
                   <th class="text-center font-black text-slate-400 uppercase tracking-widest py-2 px-2">Status</th>
                   <th class="text-center font-black text-slate-400 uppercase tracking-widest py-2 px-2">ACOS</th>
                   <th class="text-center font-black text-slate-400 uppercase tracking-widest py-2 px-2">Meta ROAS</th>
-                  <th class="text-left font-black text-slate-400 uppercase tracking-widest py-2 pl-4">AÁ„o</th>
+                  <th class="text-left font-black text-slate-400 uppercase tracking-widest py-2 pl-4">A√ß√£o</th>
                 </tr>
               </thead>
               <tbody>
@@ -93,8 +93,8 @@ const EstrategiaAdsView = {
                         'bg-gray-100 text-gray-500':  item.statusReal === 'SEM VENDAS',
                       }">{{ item.statusReal }}</span>
                   </td>
-                  <td class="py-3 px-2 text-center font-bold text-slate-600">{{ item.acosReal != null ? item.acosReal + '%' : 'ó' }}</td>
-                  <td class="py-3 px-2 text-center font-black text-blue-600">{{ item.novaMetaRoas != null ? item.novaMetaRoas + 'x' : 'ó' }}</td>
+                  <td class="py-3 px-2 text-center font-bold text-slate-600">{{ item.acosReal != null ? item.acosReal + '%' : '-' }}</td>
+                  <td class="py-3 px-2 text-center font-black text-blue-600">{{ item.novaMetaRoas != null ? item.novaMetaRoas + 'x' : '-' }}</td>
                   <td class="py-3 pl-4 font-bold text-slate-500">{{ item.acao }}</td>
                 </tr>
               </tbody>
@@ -104,7 +104,7 @@ const EstrategiaAdsView = {
 
         <!-- Plano 5 Minutos -->
         <div v-if="resultado.planoAcao5Min?.length" class="bg-blue-50 rounded-[2rem] p-6 border border-blue-100">
-          <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-3">? Plano de AÁ„o ó 5 Minutos</p>
+          <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-3">Plano de A√ß√£o ‚Ä¢ 5 Minutos</p>
           <ul class="space-y-2">
             <li v-for="acao in resultado.planoAcao5Min" :key="acao" class="text-sm text-slate-700 font-medium">{{ acao }}</li>
           </ul>
@@ -116,8 +116,8 @@ const EstrategiaAdsView = {
   data() {
     return {
       arquivo: null,
-      estoqueFisico: '',
-      produtosFornecedor: '',
+      estoqueFisico: "",
+      produtosFornecedor: "",
       carregando: false,
       resultado: null,
     };
@@ -134,13 +134,18 @@ const EstrategiaAdsView = {
       this.resultado = null;
       try {
         const form = new FormData();
-        form.append('arquivo', this.arquivo);
-        if (this.estoqueFisico)     form.append('estoqueFisico',     this.estoqueFisico);
-        if (this.produtosFornecedor) form.append('produtosFornecedor', this.produtosFornecedor);
+        form.append("arquivo", this.arquivo);
+        if (this.estoqueFisico)
+          form.append("estoqueFisico", this.estoqueFisico);
+        if (this.produtosFornecedor)
+          form.append("produtosFornecedor", this.produtosFornecedor);
 
-        this.resultado = await apiUpload('/api/estrategia/analisar-ads/upload', form);
+        this.resultado = await apiUpload(
+          "/api/estrategia/analisar-ads/upload",
+          form,
+        );
       } catch (err) {
-        alert('Erro na an·lise: ' + err.message);
+        alert("Erro na an√°lise: " + err.message);
       } finally {
         this.carregando = false;
       }

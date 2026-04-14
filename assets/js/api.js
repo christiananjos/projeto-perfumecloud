@@ -6,6 +6,23 @@ const EMAIL_CLAIM =
 const ROLE_CLAIM =
   "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 
+const MOJIBAKE_REPLACEMENTS = new Map([
+  ["Estrat�gia", "Estratégia"],
+  ["An�lise", "Análise"],
+  ["relat�rio", "relatório"],
+  ["relat�rios", "relatórios"],
+  ["F�sico", "Físico"],
+  ["Preju�zo", "Prejuízo"],
+  ["Cr�tico", "Crítico"],
+  ["Saud�veis", "Saudáveis"],
+  ["Execu��o", "Execução"],
+  ["A��o", "Ação"],
+  ["an�lise", "análise"],
+  ["� Mercado Livre", "• Mercado Livre"],
+  [" � ", " - "],
+  ["�", "-"],
+]);
+
 function getToken() {
   return window.apiToken || localStorage.getItem(AUTH_TOKEN_KEY) || "";
 }
@@ -34,6 +51,31 @@ function buildSessionFromToken(token) {
   } catch {
     return null;
   }
+}
+
+function normalizeText(value) {
+  if (typeof value !== "string") return value;
+
+  let normalized = value;
+  for (const [from, to] of MOJIBAKE_REPLACEMENTS.entries()) {
+    normalized = normalized.split(from).join(to);
+  }
+
+  return normalized;
+}
+
+function normalizeData(value) {
+  if (typeof value === "string") return normalizeText(value);
+  if (Array.isArray(value)) return value.map(normalizeData);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entryValue]) => [
+        key,
+        normalizeData(entryValue),
+      ]),
+    );
+  }
+  return value;
 }
 
 export function persistAuth(token) {
@@ -98,8 +140,15 @@ async function api(method, endpoint, body = null, isFormData = false) {
     );
   }
 
-  if (!res.ok) throw new Error(data?.mensagem || data?.title || "Erro na API");
-  return data;
+  const normalizedData = normalizeData(data);
+
+  if (!res.ok) {
+    throw new Error(
+      normalizedData?.mensagem || normalizedData?.title || "Erro na API",
+    );
+  }
+
+  return normalizedData;
 }
 
 export const apiGet = (endpoint) => api("GET", endpoint);
@@ -122,7 +171,7 @@ export async function loginApi(email, senha) {
   if (!data?.token) return data;
 
   return {
-    ...data,
+    ...normalizeData(data),
     session: buildSessionFromToken(data.token),
   };
 }
