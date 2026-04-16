@@ -40,13 +40,6 @@ const app = createApp({
       taxas: {
         ml_comissao: 12,
         ml_frete: 22.45,
-        shopee_regras: [
-          { min: 0, max: 79.99, taxa: 0.2, fixa: 4.0 },
-          { min: 80, max: 99.99, taxa: 0.14, fixa: 16.0 },
-          { min: 100, max: 199.99, taxa: 0.14, fixa: 20.0 },
-          { min: 200, max: 499.99, taxa: 0.14, fixa: 26.0 },
-          { min: 500, max: 99999, taxa: 0.14, fixa: 28.0 },
-        ],
       },
       feedback: { ativo: false, titulo: "", texto: "" },
       menu: [
