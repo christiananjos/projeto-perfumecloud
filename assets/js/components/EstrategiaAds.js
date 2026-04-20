@@ -20,6 +20,31 @@ const EstrategiaAdsView = {
           <input type="file" accept=".csv,.xlsx,.xls" class="hidden" @change="onArquivo">
         </label>
 
+        <!-- Modo de Análise -->
+        <div class="space-y-2">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Modo de Análise</p>
+          <div class="flex gap-3">
+            <button @click="modo = 'RENTABILIDADE'"
+              class="flex-1 py-3 px-4 rounded-xl font-black text-xs uppercase tracking-widest border-2 transition-all"
+              :class="modo === 'RENTABILIDADE'
+                ? 'bg-blue-600 text-white border-blue-600 shadow-lg'
+                : 'bg-white text-slate-400 border-gray-200 hover:border-blue-300'">
+              <i class="fa-solid fa-shield-halved mr-2"></i>Rentabilidade
+            </button>
+            <button @click="modo = 'VISIBILIDADE'"
+              class="flex-1 py-3 px-4 rounded-xl font-black text-xs uppercase tracking-widest border-2 transition-all"
+              :class="modo === 'VISIBILIDADE'
+                ? 'bg-violet-600 text-white border-violet-600 shadow-lg'
+                : 'bg-white text-slate-400 border-gray-200 hover:border-violet-300'">
+              <i class="fa-solid fa-rocket mr-2"></i>Visibilidade
+            </button>
+          </div>
+          <p class="text-[10px] text-slate-400">
+            <span v-if="modo === 'RENTABILIDADE'">Protege a margem alvo (DB). ROAS conservador. Ideal para operação estável.</span>
+            <span v-else>Margem alvo 5%. ROAS agressivo para ganhar ranking. Aceita ACOS mais alto.</span>
+          </p>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="space-y-1">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estoque Físico (opcional)</label>
@@ -28,6 +53,13 @@ const EstrategiaAdsView = {
           <div class="space-y-1">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produtos no Fornecedor (opcional)</label>
             <input v-model="produtosFornecedor" type="text" placeholder="Ex: Lattafa Asad, Armaf Club" class="input-soft">
+          </div>
+          <div class="space-y-1 md:col-span-2">
+            <label class="text-[10px] font-black text-amber-500 uppercase tracking-widest">
+              <i class="fa-solid fa-triangle-exclamation mr-1"></i>Estoque Parado +7 dias (opcional)
+            </label>
+            <input v-model="estoqueParado" type="text" placeholder="Ex: Lattafa Asad - 12 dias, Salvo 2 - 9 dias" class="input-soft border-amber-200 focus:border-amber-400">
+            <p class="text-[9px] text-amber-500 font-bold">Produtos listados aqui recebem ação DESOVA com ROAS break-even</p>
           </div>
         </div>
 
@@ -47,6 +79,18 @@ const EstrategiaAdsView = {
             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Canal</p>
             <p class="text-lg font-black text-slate-900">{{ resultado.canal || '-' }}</p>
           </div>
+          <div class="rounded-2xl p-5 border shadow-sm text-center"
+            :class="resultado.modoAnalise === 'VISIBILIDADE'
+              ? 'bg-violet-50 border-violet-200'
+              : 'bg-blue-50 border-blue-200'">
+            <p class="text-[9px] font-black uppercase tracking-widest mb-1"
+              :class="resultado.modoAnalise === 'VISIBILIDADE' ? 'text-violet-500' : 'text-blue-500'">Modo</p>
+            <p class="text-sm font-black"
+              :class="resultado.modoAnalise === 'VISIBILIDADE' ? 'text-violet-700' : 'text-blue-700'">
+              <i :class="resultado.modoAnalise === 'VISIBILIDADE' ? 'fa-solid fa-rocket' : 'fa-solid fa-shield-halved'" class="mr-1"></i>
+              {{ resultado.modoAnalise || 'RENTABILIDADE' }}
+            </p>
+          </div>
           <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">ROAS Geral</p>
             <p class="text-lg font-black" :class="resultado.roasGeral >= 20 ? 'text-emerald-600' : 'text-red-500'">{{ resultado.roasGeral }}x</p>
@@ -54,10 +98,6 @@ const EstrategiaAdsView = {
           <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Prejuízo Crítico</p>
             <p class="text-lg font-black text-red-500">{{ resultado.diagnostico?.prejuizoReal?.length || 0 }}</p>
-          </div>
-          <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
-            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Saudáveis</p>
-            <p class="text-lg font-black text-emerald-600">{{ resultado.diagnostico?.lucros?.length || 0 }}</p>
           </div>
         </div>
 
@@ -75,6 +115,7 @@ const EstrategiaAdsView = {
               <thead>
                 <tr class="border-b border-gray-100">
                   <th class="text-left font-black text-slate-400 uppercase tracking-widest py-2 pr-4">Produto</th>
+                  <th class="text-center font-black text-slate-400 uppercase tracking-widest py-2 px-2">Estoque</th>
                   <th class="text-center font-black text-slate-400 uppercase tracking-widest py-2 px-2">Status</th>
                   <th class="text-center font-black text-slate-400 uppercase tracking-widest py-2 px-2">ACOS</th>
                   <th class="text-center font-black text-slate-400 uppercase tracking-widest py-2 px-2">Meta ROAS</th>
@@ -82,20 +123,40 @@ const EstrategiaAdsView = {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="item in resultado.tabelaExecucao" :key="item.produto" class="border-b border-gray-50">
+                <tr v-for="item in resultado.tabelaExecucao" :key="item.produto" class="border-b border-gray-50"
+                  :class="item.statusEstoque === 'Parado' ? 'bg-amber-50/40' : ''">
                   <td class="py-3 pr-4 font-bold text-slate-800">{{ item.produto }}</td>
                   <td class="py-3 px-2 text-center">
                     <span class="px-2 py-1 rounded-lg font-black uppercase text-[9px]"
                       :class="{
-                        'bg-red-100 text-red-600':    item.statusReal === 'PREJUIZO CRITICO',
+                        'bg-amber-100 text-amber-700': item.statusEstoque === 'Parado',
+                        'bg-blue-100 text-blue-700':   item.statusEstoque === 'Fisico',
+                        'bg-slate-100 text-slate-500': item.statusEstoque === 'Fornecedor' || !item.statusEstoque,
+                      }">
+                      <i v-if="item.statusEstoque === 'Parado'" class="fa-solid fa-triangle-exclamation mr-1"></i>
+                      {{ item.statusEstoque || 'Fornecedor' }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-2 text-center">
+                    <span class="px-2 py-1 rounded-lg font-black uppercase text-[9px]"
+                      :class="{
+                        'bg-red-100 text-red-600':       item.statusReal === 'PREJUIZO CRITICO',
                         'bg-yellow-100 text-yellow-700': item.statusReal === 'ALERTA',
                         'bg-emerald-100 text-emerald-600': item.statusReal === 'SAUDAVEL',
-                        'bg-gray-100 text-gray-500':  item.statusReal === 'SEM VENDAS',
+                        'bg-gray-100 text-gray-500':     item.statusReal === 'SEM VENDAS',
                       }">{{ item.statusReal }}</span>
                   </td>
                   <td class="py-3 px-2 text-center font-bold text-slate-600">{{ item.acosReal != null ? item.acosReal + '%' : '-' }}</td>
-                  <td class="py-3 px-2 text-center font-black text-blue-600">{{ item.novaMetaRoas != null ? item.novaMetaRoas + 'x' : '-' }}</td>
-                  <td class="py-3 pl-4 font-bold text-slate-500">{{ item.acao }}</td>
+                  <td class="py-3 px-2 text-center font-black"
+                    :class="item.statusEstoque === 'Parado' ? 'text-amber-600' : 'text-blue-600'">
+                    {{ item.novaMetaRoas != null ? item.novaMetaRoas + 'x' : '-' }}
+                  </td>
+                  <td class="py-3 pl-4 font-bold"
+                    :class="{
+                      'text-amber-600': item.acao === 'DESOVA',
+                      'text-blue-600':  item.acao === 'DESTRAVAR',
+                      'text-slate-500': item.acao !== 'DESOVA' && item.acao !== 'DESTRAVAR',
+                    }">{{ item.acao }}</td>
                 </tr>
               </tbody>
             </table>
@@ -118,6 +179,8 @@ const EstrategiaAdsView = {
       arquivo: null,
       estoqueFisico: "",
       produtosFornecedor: "",
+      estoqueParado: "",
+      modo: "RENTABILIDADE",
       carregando: false,
       resultado: null,
     };
@@ -135,10 +198,13 @@ const EstrategiaAdsView = {
       try {
         const form = new FormData();
         form.append("arquivo", this.arquivo);
+        form.append("modo", this.modo);
         if (this.estoqueFisico)
           form.append("estoqueFisico", this.estoqueFisico);
         if (this.produtosFornecedor)
           form.append("produtosFornecedor", this.produtosFornecedor);
+        if (this.estoqueParado)
+          form.append("estoqueParado", this.estoqueParado);
 
         this.resultado = await apiUpload(
           "/api/estrategia/analisar-ads/upload",
