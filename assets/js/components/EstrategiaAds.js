@@ -46,24 +46,50 @@ const EstrategiaAdsView = {
           </p>
         </div>
 
-        <!-- Estoque Físico – seleção de produtos do banco -->
+        <!-- Estoque Físico – seleção colapsável -->
         <div class="space-y-2">
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estoque Físico (selecione os produtos que você tem em mãos)</p>
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estoque Físico</p>
 
-          <!-- Barra de busca + botão limpar -->
-          <div class="flex gap-2">
-            <div class="relative flex-1">
-              <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
-              <input v-model="buscaProduto" type="text" placeholder="Filtrar produtos..." class="input-soft !pl-9 !py-2 !text-xs">
-            </div>
-            <button v-if="selecionados.length" @click="selecionados = []"
-              class="text-[10px] font-black text-red-400 hover:text-red-600 px-3 py-2 rounded-xl border border-red-100 hover:border-red-300 transition-colors whitespace-nowrap">
-              <i class="fa-solid fa-xmark mr-1"></i>Limpar
-            </button>
+          <!-- Botão que abre/fecha a lista -->
+          <button type="button" @click="listaAberta = !listaAberta"
+            class="w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all"
+            :class="selecionados.length
+              ? 'border-blue-300 bg-blue-50 text-blue-700'
+              : 'border-gray-200 bg-white text-slate-400 hover:border-blue-200'">
+            <span class="text-xs font-bold">
+              <i class="fa-solid fa-boxes-stacked mr-2"></i>
+              <span v-if="selecionados.length">{{ selecionados.length }} produto{{ selecionados.length > 1 ? 's' : '' }} em mãos</span>
+              <span v-else>Selecionar produtos em estoque físico...</span>
+            </span>
+            <i class="fa-solid text-xs transition-transform"
+              :class="listaAberta ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+          </button>
+
+          <!-- Chips dos selecionados (sempre visíveis quando há seleção) -->
+          <div v-if="selecionados.length && !listaAberta" class="flex flex-wrap gap-1 px-1">
+            <span v-for="id in selecionados" :key="id"
+              class="bg-blue-100 text-blue-700 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+              {{ nomePorId(id) }}
+              <button @click.stop="selecionados = selecionados.filter(s => s !== id)" class="hover:text-red-500">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </span>
           </div>
 
-          <!-- Lista com scroll -->
-          <div class="border border-gray-100 rounded-2xl overflow-hidden">
+          <!-- Painel colapsável -->
+          <div v-if="listaAberta" class="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+            <!-- Busca + limpar -->
+            <div class="flex gap-2 p-3 border-b border-gray-100 bg-gray-50">
+              <div class="relative flex-1">
+                <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                <input v-model="buscaProduto" type="text" placeholder="Filtrar..." class="input-soft !pl-9 !py-2 !text-xs">
+              </div>
+              <button v-if="selecionados.length" @click="selecionados = []"
+                class="text-[10px] font-black text-red-400 hover:text-red-600 px-3 py-2 rounded-xl border border-red-100 hover:border-red-300 transition-colors whitespace-nowrap">
+                <i class="fa-solid fa-xmark mr-1"></i>Limpar
+              </button>
+            </div>
+            <!-- Lista -->
             <div class="max-h-52 overflow-y-auto divide-y divide-gray-50">
               <label v-for="p in produtosFiltradosLista" :key="p.id"
                 class="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors"
@@ -80,14 +106,15 @@ const EstrategiaAdsView = {
                 Nenhum produto encontrado
               </div>
             </div>
-            <div v-if="selecionados.length" class="border-t border-blue-100 bg-blue-50 px-4 py-2 flex flex-wrap gap-1">
-              <span v-for="id in selecionados" :key="id"
-                class="bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
-                {{ nomePorId(id) }}
-              </span>
+            <!-- Rodapé do painel -->
+            <div class="border-t border-gray-100 bg-gray-50 px-4 py-2 flex justify-between items-center">
+              <p class="text-[9px] text-slate-400 font-semibold">O restante será tratado como fornecedor automaticamente.</p>
+              <button @click="listaAberta = false"
+                class="text-[10px] font-black text-blue-500 hover:text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-50 transition-colors">
+                Fechar
+              </button>
             </div>
           </div>
-          <p class="text-[9px] text-slate-400 font-semibold">O restante dos produtos anunciados será tratado como estoque no fornecedor automaticamente.</p>
         </div>
 
         <button @click="analisar" :disabled="!arquivo || carregando"
@@ -206,6 +233,7 @@ const EstrategiaAdsView = {
       arquivo: null,
       selecionados: [],
       buscaProduto: "",
+      listaAberta: false,
       estoqueParado: "",
       modo: "RENTABILIDADE",
       carregando: false,
