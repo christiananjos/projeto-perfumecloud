@@ -26,11 +26,12 @@ const EstoqueView = {
                 <table class="w-full text-left font-semibold text-xs md:text-sm table-fixed min-w-full">
                     <thead class="bg-gray-50 text-[9px] md:text-[10px] font-bold uppercase text-gray-400 border-b">
                         <tr>
-                            <th class="py-3 md:py-5 px-4 md:px-6 w-[35%] md:w-[30%] italic">Produto</th>
-                            <th class="py-3 md:py-5 px-4 md:px-6 text-center w-[12%] italic">Margem %</th>
-                            <th class="py-3 md:py-5 px-4 md:px-6 text-right w-[15%] text-slate-400 italic">Custo</th>
-                            <th class="py-3 md:py-5 px-4 md:px-6 text-right text-orange-600 w-[18%] font-black uppercase italic">Venda ML</th>
-                            <th class="py-3 md:py-5 px-4 md:px-6 text-right text-orange-400 w-[18%] font-black uppercase italic text-center">Venda Shopee</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 w-[28%] md:w-[25%] italic">Produto</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-center w-[10%] italic">Margem %</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-right w-[12%] text-slate-400 italic">Custo</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-right text-orange-600 w-[14%] font-black uppercase italic">Venda ML</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-right text-orange-400 w-[14%] font-black uppercase italic text-center">Venda Shopee</th>
+                            <th class="py-3 md:py-5 px-4 md:px-6 text-center w-[14%] italic">Estoque</th>
                             <th class="py-3 md:py-5 px-4 md:px-6 text-center w-24 text-slate-400 uppercase italic text-center">Ações</th>
                         </tr>
                     </thead>
@@ -48,6 +49,13 @@ const EstoqueView = {
                             <td class="py-2 md:py-5 px-4 md:px-6 text-right text-slate-400 font-bold">R$ {{ Number(p.custo).toFixed(2) }}</td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-right text-orange-600 font-black italic">R$ {{ Number(p.precoSugerMl).toFixed(2) }}</td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-right text-orange-400 font-black italic">R$ {{ Number(p.precoSugerShopee || 0).toFixed(2) }}</td>
+                            <td class="py-2 md:py-5 px-4 md:px-6 text-center">
+                                <div class="flex flex-col items-center gap-0.5">
+                                    <span :class="p.estoque > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-400'" class="px-2 py-1 rounded-lg text-[10px] font-black">{{ p.estoque }} un</span>
+                                    <span v-if="p.dataAtualizacaoEstoque" class="text-[8px] text-slate-300 font-semibold">{{ new Date(p.dataAtualizacaoEstoque).toLocaleDateString('pt-BR') }}</span>
+                                    <span v-else class="text-[8px] text-slate-300">—</span>
+                                </div>
+                            </td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <button @click="isAdmin ? abrirModal(p) : null" :class="isAdmin ? 'text-blue-400 hover:text-blue-600' : 'text-gray-200 cursor-not-allowed'"><i class="fa-solid fa-pen-to-square"></i></button>
@@ -77,6 +85,11 @@ const EstoqueView = {
                     <input v-model.trim="form.inspiracao" type="text" class="input-soft" :disabled="salvando">
                     </div>
                     
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Estoque (unidades)</label>
+                        <input v-model.number="form.estoque" type="number" min="0" step="1" class="input-soft font-bold" :disabled="salvando" placeholder="0">
+                    </div>
+
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-1">
                             <label class="text-[9px] font-bold text-blue-500 uppercase ml-2 italic">Custo (R$)</label>
@@ -157,6 +170,7 @@ const EstoqueView = {
         margem: 10,
         taxa_ml: 0,
         frete_fixo: 0,
+        estoque: 0,
       },
     };
   },
@@ -255,6 +269,7 @@ const EstoqueView = {
             p.mktpFreteOverride !== null
               ? Number(p.mktpFreteOverride)
               : this.taxas.ml_frete,
+          estoque: p.estoque ?? 0,
         };
       } else {
         this.modoEdicao = false;
@@ -268,6 +283,7 @@ const EstoqueView = {
           preco_suger_shopee: 0,
           taxa_ml: this.taxas.ml_comissao,
           frete_fixo: this.taxas.ml_frete,
+          estoque: 0,
         };
         this.autoCalcularTudo();
       }
@@ -312,6 +328,7 @@ const EstoqueView = {
         precoSugerShopee: this.toValidNumber(this.form.preco_suger_shopee),
         mktpTaxaOverride: this.toValidNumber(this.form.taxa_ml),
         mktpFreteOverride: this.toValidNumber(this.form.frete_fixo),
+        estoque: this.toValidNumber(this.form.estoque),
       };
 
       this.salvando = true;
