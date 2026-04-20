@@ -1,6 +1,7 @@
 import { apiUpload } from "../api.js";
 
 const EstrategiaAdsView = {
+  props: ["produtos"],
   template: `
     <div class="space-y-6 max-w-4xl mx-auto">
 
@@ -45,22 +46,48 @@ const EstrategiaAdsView = {
           </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="space-y-1">
-            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estoque Físico (opcional)</label>
-            <input v-model="estoqueFisico" type="text" placeholder="Ex: 2 Salvo, 3 Club de Nuit" class="input-soft">
+        <!-- Estoque Físico – seleção de produtos do banco -->
+        <div class="space-y-2">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estoque Físico (selecione os produtos que você tem em mãos)</p>
+
+          <!-- Barra de busca + botão limpar -->
+          <div class="flex gap-2">
+            <div class="relative flex-1">
+              <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+              <input v-model="buscaProduto" type="text" placeholder="Filtrar produtos..." class="input-soft !pl-9 !py-2 !text-xs">
+            </div>
+            <button v-if="selecionados.length" @click="selecionados = []"
+              class="text-[10px] font-black text-red-400 hover:text-red-600 px-3 py-2 rounded-xl border border-red-100 hover:border-red-300 transition-colors whitespace-nowrap">
+              <i class="fa-solid fa-xmark mr-1"></i>Limpar
+            </button>
           </div>
-          <div class="space-y-1">
-            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produtos no Fornecedor (opcional)</label>
-            <input v-model="produtosFornecedor" type="text" placeholder="Ex: Lattafa Asad, Armaf Club" class="input-soft">
+
+          <!-- Lista com scroll -->
+          <div class="border border-gray-100 rounded-2xl overflow-hidden">
+            <div class="max-h-52 overflow-y-auto divide-y divide-gray-50">
+              <label v-for="p in produtosFiltradosLista" :key="p.id"
+                class="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors"
+                :class="selecionados.includes(p.id) ? 'bg-blue-50' : ''">
+                <input type="checkbox" :value="p.id" v-model="selecionados" class="accent-blue-600 w-4 h-4 shrink-0">
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-bold text-slate-800 truncate block">{{ p.nome }}</span>
+                  <span v-if="p.inspiracao" class="text-[9px] text-slate-400 uppercase tracking-tight">{{ p.inspiracao }}</span>
+                </div>
+                <span :class="p.estoque > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-400'"
+                  class="text-[9px] font-black px-2 py-0.5 rounded-lg shrink-0">{{ p.estoque }} un</span>
+              </label>
+              <div v-if="!produtosFiltradosLista.length" class="px-4 py-4 text-center text-xs text-slate-300 font-bold uppercase">
+                Nenhum produto encontrado
+              </div>
+            </div>
+            <div v-if="selecionados.length" class="border-t border-blue-100 bg-blue-50 px-4 py-2 flex flex-wrap gap-1">
+              <span v-for="id in selecionados" :key="id"
+                class="bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                {{ nomePorId(id) }}
+              </span>
+            </div>
           </div>
-          <div class="space-y-1 md:col-span-2">
-            <label class="text-[10px] font-black text-amber-500 uppercase tracking-widest">
-              <i class="fa-solid fa-triangle-exclamation mr-1"></i>Estoque Parado +7 dias (opcional)
-            </label>
-            <input v-model="estoqueParado" type="text" placeholder="Ex: Lattafa Asad - 12 dias, Salvo 2 - 9 dias" class="input-soft border-amber-200 focus:border-amber-400">
-            <p class="text-[9px] text-amber-500 font-bold">Produtos listados aqui recebem ação DESOVA com ROAS break-even</p>
-          </div>
+          <p class="text-[9px] text-slate-400 font-semibold">O restante dos produtos anunciados será tratado como estoque no fornecedor automaticamente.</p>
         </div>
 
         <button @click="analisar" :disabled="!arquivo || carregando"
@@ -177,8 +204,8 @@ const EstrategiaAdsView = {
   data() {
     return {
       arquivo: null,
-      estoqueFisico: "",
-      produtosFornecedor: "",
+      selecionados: [],
+      buscaProduto: "",
       estoqueParado: "",
       modo: "RENTABILIDADE",
       carregando: false,
@@ -186,9 +213,26 @@ const EstrategiaAdsView = {
     };
   },
 
+  computed: {
+    produtosFiltradosLista() {
+      const t = (this.buscaProduto || "").toLowerCase();
+      if (!t) return this.produtos || [];
+      return (this.produtos || []).filter(
+        (p) =>
+          (p.nome || "").toLowerCase().includes(t) ||
+          (p.inspiracao || "").toLowerCase().includes(t),
+      );
+    },
+  },
+
   methods: {
     onArquivo(e) {
       this.arquivo = e.target.files[0] || null;
+    },
+
+    nomePorId(id) {
+      const p = (this.produtos || []).find((x) => x.id === id);
+      return p ? p.nome : "";
     },
 
     async analisar() {
@@ -199,10 +243,15 @@ const EstrategiaAdsView = {
         const form = new FormData();
         form.append("arquivo", this.arquivo);
         form.append("modo", this.modo);
-        if (this.estoqueFisico)
-          form.append("estoqueFisico", this.estoqueFisico);
-        if (this.produtosFornecedor)
-          form.append("produtosFornecedor", this.produtosFornecedor);
+
+        // Monta estoque físico a partir dos produtos selecionados
+        if (this.selecionados.length) {
+          const nomes = this.selecionados
+            .map((id) => this.nomePorId(id))
+            .filter(Boolean);
+          form.append("estoqueFisico", nomes.join(", "));
+        }
+
         if (this.estoqueParado)
           form.append("estoqueParado", this.estoqueParado);
 
