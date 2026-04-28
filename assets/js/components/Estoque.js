@@ -230,7 +230,9 @@ const EstoqueView = {
       });
     },
     totalPaginas() {
-      return Math.ceil(this.produtosFiltrados.length / this.itensPorPagina) || 1;
+      return (
+        Math.ceil(this.produtosFiltrados.length / this.itensPorPagina) || 1
+      );
     },
     paginados() {
       const inicio = (this.paginaAtual - 1) * this.itensPorPagina;
@@ -242,21 +244,32 @@ const EstoqueView = {
       if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
       const paginas = [];
       paginas.push(1);
-      if (atual > 3) paginas.push('...');
-      for (let i = Math.max(2, atual - 1); i <= Math.min(total - 1, atual + 1); i++)
+      if (atual > 3) paginas.push("...");
+      for (
+        let i = Math.max(2, atual - 1);
+        i <= Math.min(total - 1, atual + 1);
+        i++
+      )
         paginas.push(i);
-      if (atual < total - 2) paginas.push('...');
+      if (atual < total - 2) paginas.push("...");
       paginas.push(total);
       return paginas;
     },
     itensPorPaginaLocal: {
-      get() { return this.itensPorPagina; },
-      set(v) { this.itensPorPagina = v; this.paginaAtual = 1; },
+      get() {
+        return this.itensPorPagina;
+      },
+      set(v) {
+        this.itensPorPagina = v;
+        this.paginaAtual = 1;
+      },
     },
   },
   watch: {
     filtros: {
-      handler() { this.paginaAtual = 1; },
+      handler() {
+        this.paginaAtual = 1;
+      },
       deep: true,
     },
   },
