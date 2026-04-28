@@ -66,6 +66,46 @@ const EstoqueView = {
                     </tbody>
                 </table>
             </div>
+
+            <!-- Paginação -->
+            <div class="flex flex-col md:flex-row items-center justify-between gap-3 px-4 md:px-6 py-3 md:py-4 border-t border-gray-50 shrink-0">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    {{ ((paginaAtual - 1) * itensPorPagina) + 1 }}–{{ Math.min(paginaAtual * itensPorPagina, produtosFiltrados.length) }}
+                    de {{ produtosFiltrados.length }} produto{{ produtosFiltrados.length !== 1 ? 's' : '' }}
+                </span>
+                <div class="flex items-center gap-1">
+                    <button @click="irParaPagina(1)" :disabled="paginaAtual === 1"
+                        class="w-8 h-8 flex items-center justify-center rounded-xl text-xs font-black text-slate-400 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                        <i class="fa-solid fa-angles-left"></i>
+                    </button>
+                    <button @click="irParaPagina(paginaAtual - 1)" :disabled="paginaAtual === 1"
+                        class="w-8 h-8 flex items-center justify-center rounded-xl text-xs font-black text-slate-400 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                        <i class="fa-solid fa-angle-left"></i>
+                    </button>
+                    <template v-for="p in paginasVisiveis" :key="p">
+                        <span v-if="p === '...'" class="w-8 h-8 flex items-center justify-center text-slate-300 text-xs font-bold">…</span>
+                        <button v-else @click="irParaPagina(p)"
+                            :class="p === paginaAtual ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'"
+                            class="w-8 h-8 flex items-center justify-center rounded-xl text-xs font-black transition-colors">
+                            {{ p }}
+                        </button>
+                    </template>
+                    <button @click="irParaPagina(paginaAtual + 1)" :disabled="paginaAtual === totalPaginas"
+                        class="w-8 h-8 flex items-center justify-center rounded-xl text-xs font-black text-slate-400 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                        <i class="fa-solid fa-angle-right"></i>
+                    </button>
+                    <button @click="irParaPagina(totalPaginas)" :disabled="paginaAtual === totalPaginas"
+                        class="w-8 h-8 flex items-center justify-center rounded-xl text-xs font-black text-slate-400 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                        <i class="fa-solid fa-angles-right"></i>
+                    </button>
+                </div>
+                <select v-model.number="itensPorPagina" @change="irParaPagina(1)"
+                    class="text-[10px] font-bold text-slate-500 uppercase bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 cursor-pointer">
+                    <option :value="10">10 por página</option>
+                    <option :value="20">20 por página</option>
+                    <option :value="50">50 por página</option>
+                </select>
+            </div>
         </div>
 
         <div v-if="modal.aberto" class="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
@@ -180,25 +220,51 @@ const EstoqueView = {
     },
     produtosFiltrados() {
       const t = (this.filtros.busca || "").toLowerCase();
-      return this.produtos.filter(
-        (p) =>
+      const max = this.filtros.precoMax ? Number(this.filtros.precoMax) : null;
+      return this.produtos.filter((p) => {
+        const matchTexto =
           (p.nome || "").toLowerCase().includes(t) ||
-          (p.inspiracao || "").toLowerCase().includes(t),
-      );
+          (p.inspiracao || "").toLowerCase().includes(t);
+        const matchPreco = max === null || Number(p.precoSugerMl || 0) <= max;
+        return matchTexto && matchPreco;
+      });
     },
     totalPaginas() {
-      return (
-        Math.ceil(this.produtosFiltrados.length / this.itensPorPagina) || 1
-      );
+      return Math.ceil(this.produtosFiltrados.length / this.itensPorPagina) || 1;
     },
     paginados() {
-      return this.produtosFiltrados.slice(
-        (this.paginaAtual - 1) * this.itensPorPagina,
-        this.paginaAtual * this.itensPorPagina,
-      );
+      const inicio = (this.paginaAtual - 1) * this.itensPorPagina;
+      return this.produtosFiltrados.slice(inicio, inicio + this.itensPorPagina);
+    },
+    paginasVisiveis() {
+      const total = this.totalPaginas;
+      const atual = this.paginaAtual;
+      if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+      const paginas = [];
+      paginas.push(1);
+      if (atual > 3) paginas.push('...');
+      for (let i = Math.max(2, atual - 1); i <= Math.min(total - 1, atual + 1); i++)
+        paginas.push(i);
+      if (atual < total - 2) paginas.push('...');
+      paginas.push(total);
+      return paginas;
+    },
+    itensPorPaginaLocal: {
+      get() { return this.itensPorPagina; },
+      set(v) { this.itensPorPagina = v; this.paginaAtual = 1; },
+    },
+  },
+  watch: {
+    filtros: {
+      handler() { this.paginaAtual = 1; },
+      deep: true,
     },
   },
   methods: {
+    irParaPagina(p) {
+      const pagina = Math.max(1, Math.min(p, this.totalPaginas));
+      this.paginaAtual = pagina;
+    },
     toValidNumber(value, fallback = 0) {
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed : fallback;
