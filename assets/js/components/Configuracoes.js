@@ -98,21 +98,16 @@ const ConfiguracoesView = {
     async salvarTaxas() {
       if (!this.isAdmin) return;
       try {
-        await Promise.all([
-          apiPut("/api/configuracoes", {
-            chave: "ml_comissao",
-            valor: this.localTaxas.ml_comissao,
-          }),
-          apiPut("/api/configuracoes", {
-            chave: "ml_frete",
-            valor: this.localTaxas.ml_frete,
-          }),
-        ]);
+        await apiPatch("/api/configuracoes/ml/aplicar-em-todos", {
+          comissao: this.localTaxas.ml_comissao,
+          frete: this.localTaxas.ml_frete,
+        });
         this.$emit("notificar", {
           titulo: "Sucesso!",
-          texto: "Taxas atualizadas.",
+          texto: "Taxas atualizadas em todos os produtos.",
         });
         this.$emit("refresh", "configuracoes");
+        this.$emit("refresh", "produtos");
       } catch (err) {
         console.error(err);
       }
