@@ -6,12 +6,12 @@ Sistema web para gerenciamento de estoque, vendas e precificação de perfumes n
 
 ## Tecnologias
 
-| Camada | Tecnologia |
-|---|---|
-| Frontend | Vue 3 (CDN), Tailwind CSS (CDN), Chart.js, Font Awesome 6 |
-| Backend | Azure Web Services (API REST) |
-| Edge Functions | Supabase + Deno (scraper de anúncios ML) |
-| Autenticação | JWT armazenado em localStorage |
+| Camada         | Tecnologia                                                |
+| -------------- | --------------------------------------------------------- |
+| Frontend       | Vue 3 (CDN), Tailwind CSS (CDN), Chart.js, Font Awesome 6 |
+| Backend        | Azure Web Services (API REST)                             |
+| Edge Functions | Supabase + Deno (scraper de anúncios ML)                  |
+| Autenticação   | JWT armazenado em localStorage                            |
 
 ---
 
@@ -33,8 +33,10 @@ php -S localhost:8000
 Acesse em `http://localhost:8000`.
 
 A URL da API está definida em `index.html`:
+
 ```javascript
-window.API_URL = 'https://marketplacemanagement-hzhygwdfaxfnbnga.brazilsouth-01.azurewebsites.net'
+window.API_URL =
+  "https://marketplacemanagement-hzhygwdfaxfnbnga.brazilsouth-01.azurewebsites.net";
 ```
 
 ### Supabase local (Edge Functions)
@@ -73,26 +75,34 @@ projeto-perfumecloud/
 ## Módulos do sistema
 
 ### Dashboard
+
 KPIs de faturamento, lucro e quantidade de vendas com comparação percentual ao mês anterior. Gráfico de barras (últimos 6 meses) e donut (top 5 produtos por lucro). Filtro por mês.
 
 ### Vender
+
 Registro rápido de vendas com autocomplete de produtos. Calcula lucro líquido em tempo real. Aceita Order ID do ML e código de rastreio como campos opcionais.
 
 ### Histórico
+
 Lista paginada de vendas com filtro por canal (ML/Shopee) e busca por texto. Admin pode editar e excluir registros.
 
 ### Estoque
+
 CRUD de produtos com cálculo automático de preço sugerido para ML e Shopee. Tabela paginada (10/20/50 itens) com filtros por nome e preço.
 
 ### Scanner ML (`AnaliseView`)
+
 Analisa anúncios do Mercado Livre via URL. Detecta: produto CBT (China), fora de cobertura de entrega, reputação do vendedor e status Mercado Líder. Usa Supabase Edge Function.
 
 ### Estratégia Ads (`EstrategiaAds`)
+
 Upload de relatórios CSV/XLSX de campanhas. Dois modos de análise:
+
 - **Rentabilidade** — margem estável, ROAS conservador
 - **Visibilidade** — margem 5%, ROAS agressivo para ranking
 
 ### Configurações
+
 Ajuste de taxas globais (comissão % e frete fixo do ML) com aplicação em massa a todos os produtos. Gerenciamento de canais de venda.
 
 ---
@@ -100,9 +110,11 @@ Ajuste de taxas globais (comissão % e frete fixo do ML) com aplicação em mass
 ## Precificação
 
 **Mercado Livre:**
+
 ```
 Preço Sugerido = (Custo × 1.30) + Taxa Fixa ML
 ```
+
 Exemplo: custo R$ 100 → margem R$ 30 + taxa R$ 60 = **R$ 190**
 
 **Shopee (4 faixas):**
@@ -117,14 +129,14 @@ Exemplo: custo R$ 100 → margem R$ 30 + taxa R$ 60 = **R$ 190**
 
 ## Controle de acesso (RBAC)
 
-| Ação | Admin | Vendedor |
-|---|---|---|
-| Visualizar dashboard e histórico | ✅ | ✅ |
-| Registrar venda | ✅ | ✅ |
-| Criar produto | ✅ | ❌ |
-| Editar / excluir produto | ✅ | ❌ |
-| Ajustar taxas e canais | ✅ | ❌ |
-| Editar / excluir venda | ✅ | ❌ |
+| Ação                             | Admin | Vendedor |
+| -------------------------------- | ----- | -------- |
+| Visualizar dashboard e histórico | ✅    | ✅       |
+| Registrar venda                  | ✅    | ✅       |
+| Criar produto                    | ✅    | ❌       |
+| Editar / excluir produto         | ✅    | ❌       |
+| Ajustar taxas e canais           | ✅    | ❌       |
+| Editar / excluir venda           | ✅    | ❌       |
 
 A role é extraída do claim do JWT retornado pelo backend.
 
@@ -138,15 +150,15 @@ Login com **usuário + senha** (sem e-mail). O frontend converte internamente pa
 
 ## Principais endpoints da API
 
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/api/auth/login` | Autenticação |
-| GET/POST | `/api/produtos` | Listar / criar produto |
-| PUT | `/api/produtos/:id` | Editar produto |
-| PATCH | `/api/produtos/:id/inativar` | Desativar produto |
-| GET/POST | `/api/vendas` | Listar / registrar venda |
-| PUT/DELETE | `/api/vendas/:id` | Editar / excluir venda |
-| GET | `/api/configuracoes` | Obter taxas globais |
-| PATCH | `/api/configuracoes/ml/aplicar-em-todos` | Aplicar taxas em massa |
-| GET/POST | `/api/canais` | Listar / criar canal |
-| PATCH | `/api/canais/:id/desativar` | Desativar canal |
+| Método     | Rota                                     | Descrição                |
+| ---------- | ---------------------------------------- | ------------------------ |
+| POST       | `/api/auth/login`                        | Autenticação             |
+| GET/POST   | `/api/produtos`                          | Listar / criar produto   |
+| PUT        | `/api/produtos/:id`                      | Editar produto           |
+| PATCH      | `/api/produtos/:id/inativar`             | Desativar produto        |
+| GET/POST   | `/api/vendas`                            | Listar / registrar venda |
+| PUT/DELETE | `/api/vendas/:id`                        | Editar / excluir venda   |
+| GET        | `/api/configuracoes`                     | Obter taxas globais      |
+| PATCH      | `/api/configuracoes/ml/aplicar-em-todos` | Aplicar taxas em massa   |
+| GET/POST   | `/api/canais`                            | Listar / criar canal     |
+| PATCH      | `/api/canais/:id/desativar`              | Desativar canal          |
