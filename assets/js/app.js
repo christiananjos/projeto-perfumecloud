@@ -44,11 +44,10 @@ const app = createApp({
       feedback: { ativo: false, titulo: "", texto: "" },
       menu: [
         { id: "dashboard", label: "Dashboard", icon: "fa-solid fa-chart-pie" },
-        { id: "vender", label: "Vender", icon: "fa-solid fa-tag" },
         {
           id: "historico",
-          label: "Histórico",
-          icon: "fa-solid fa-clock-rotate-left",
+          label: "Vendas",
+          icon: "fa-solid fa-tag",
         },
         { id: "estoque", label: "Estoque", icon: "fa-solid fa-box-archive" },
         {

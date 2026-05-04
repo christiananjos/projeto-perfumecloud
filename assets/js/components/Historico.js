@@ -1,12 +1,17 @@
-import { apiPut, apiDelete } from "../api.js";
+import { apiPut, apiDelete, apiPost } from "../api.js";
 
 const HistoricoView = {
   template: `
     <div class="animate-fade-in flex flex-col mx-auto w-full md:max-w-6xl h-[92vh] md:h-auto space-y-3 md:space-y-8 pt-2 text-left">
-        
+
         <div class="flex justify-between items-center px-4 shrink-0">
             <h2 class="text-xl md:text-3xl font-bold tracking-tighter text-slate-900 leading-none italic uppercase">Histórico de Vendas</h2>
-            <div class="md:hidden text-[9px] font-bold text-gray-400 uppercase tracking-widest text-right">{{ vendasFiltradas.length }} registros</div>
+            <div class="flex items-center gap-3">
+                <div class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{{ vendasFiltradas.length }} registros</div>
+                <button @click="abrirVenderModal" class="btn-primary px-5 py-2.5 text-xs uppercase tracking-tighter shadow-lg active:scale-95 transition-transform flex items-center gap-2">
+                    <i class="fa-solid fa-tag"></i> Vender
+                </button>
+            </div>
         </div>
 
         <div class="px-4 shrink-0 grid grid-cols-12 gap-2">
@@ -56,7 +61,7 @@ const HistoricoView = {
                             <td class="py-5 px-6 hidden md:table-cell">
                                 <div class="flex flex-col gap-1 text-center items-center">
                                     <div class="flex items-center gap-2">
-                                        <span :class="v.canal === 'SHOPEE' ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-700 border-orange-100'" 
+                                        <span :class="v.canal === 'SHOPEE' ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-700 border-orange-100'"
                                               class="px-2 py-0.5 rounded text-[8px] font-black uppercase border italic">
                                             {{ v.canal }}
                                         </span>
@@ -82,7 +87,7 @@ const HistoricoView = {
                     </tbody>
                 </table>
             </div>
-            
+
             <div class="p-4 bg-gray-50 border-t flex justify-between items-center shrink-0">
                 <span class="text-[9px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">Página {{ paginaAtual }} de {{ totalPaginas }}</span>
                 <div class="flex gap-2">
@@ -92,6 +97,7 @@ const HistoricoView = {
             </div>
         </div>
 
+        <!-- Modal de edição -->
         <div v-if="editModal.aberto" class="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 text-left">
             <div class="bg-white rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl animate-fade-in">
                 <div class="text-center mb-6">
@@ -142,6 +148,7 @@ const HistoricoView = {
             </div>
         </div>
 
+        <!-- Modal de exclusão -->
         <div v-if="confirmModal.aberto" class="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl animate-fade-in text-center">
                 <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">
@@ -154,8 +161,89 @@ const HistoricoView = {
                 </div>
             </div>
         </div>
+
+        <!-- Modal de Venda Rápida -->
+        <div v-if="venderModal.aberto" class="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 text-left">
+            <div class="bg-white rounded-[2.5rem] p-6 md:p-10 max-w-lg w-full shadow-2xl animate-fade-in space-y-5 overflow-y-auto max-h-[95vh]">
+                <div class="text-center space-y-1">
+                    <h2 class="text-2xl md:text-3xl font-black tracking-tighter text-slate-900 leading-none italic uppercase">Venda Rápida</h2>
+                    <div class="flex flex-wrap justify-center gap-2 mt-4">
+                        <button v-for="c in canais" :key="c.id"
+                            @click="mudarCanal(c)"
+                            :style="venderForm.canalId === c.id ? { backgroundColor: c.corHex || c.cor_hex, color: 'white' } : {}"
+                            :class="venderForm.canalId === c.id ? 'shadow-lg' : 'bg-slate-50 text-slate-400'"
+                            class="px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 border border-transparent">
+                            {{ c.nome }}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-4">Produto</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                            <input
+                                list="lista-vender-modal"
+                                v-model="inputBusca"
+                                @input="aoSelecionarPeloNome"
+                                placeholder="Selecione o produto..."
+                                class="input-soft !pl-10 !text-sm"
+                            >
+                            <datalist id="lista-vender-modal">
+                                <option v-for="p in produtos" :key="p.id" :value="p.nome"></option>
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 items-end">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-4 block">Quantidade</label>
+                            <input v-model.number="venderForm.quantidade" type="number" min="1" class="input-soft !py-3 text-center font-bold">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-orange-600 uppercase ml-4 block italic">Entrada Líquida (Unit.)</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-orange-300 italic">R$</span>
+                                <input v-model.number="venderForm.precoRecebido" type="number" step="0.01" class="input-soft !pl-10 !py-3 font-bold border-orange-200">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1 text-slate-400">
+                            <label class="text-[10px] font-bold uppercase ml-4 tracking-widest">ID do Pedido</label>
+                            <input v-model="venderForm.mlOrderId" type="text" placeholder="Opcional" class="input-soft !py-3">
+                        </div>
+                        <div class="space-y-1 text-slate-400">
+                            <label class="text-[10px] font-bold uppercase ml-4 tracking-widest">Rastreio</label>
+                            <input v-model="venderForm.trackingCode" type="text" placeholder="Opcional" class="input-soft !py-3 uppercase">
+                        </div>
+                    </div>
+
+                    <div v-if="venderForm.produtoId" class="bg-emerald-50/80 rounded-2xl p-4 border border-emerald-100 flex justify-between items-center animate-fade-in shadow-sm">
+                        <div class="text-left">
+                            <p class="text-[8px] font-black text-emerald-600 uppercase tracking-widest leading-none">Lucro Líquido</p>
+                            <p class="text-2xl font-black text-emerald-700 mt-1">R$ {{ calcularLucro() }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Custo Unit.</p>
+                            <p class="text-xs font-bold text-slate-600 mt-1">R$ {{ getCustoProduto() }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button @click="fecharVenderModal" class="flex-1 py-4 font-bold text-gray-400 uppercase text-[10px] bg-gray-50 rounded-2xl">Cancelar</button>
+                    <button @click="salvar" :disabled="!venderForm.produtoId || venderForm.quantidade < 1"
+                            class="flex-1 btn-primary py-4 text-sm uppercase tracking-tighter disabled:opacity-50 active:scale-95 transition-transform">
+                        Confirmar Venda
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>`,
-  props: ["vendas", "produtos", "userRole"],
+  props: ["vendas", "produtos", "canais", "userRole"],
   data() {
     return {
       busca: "",
@@ -164,7 +252,30 @@ const HistoricoView = {
       itensPorPagina: window.innerWidth < 768 ? 7 : 10,
       confirmModal: { aberto: false, idParaExcluir: null },
       editModal: { aberto: false, form: {}, custo_manual: 0 },
+      venderModal: { aberto: false },
+      inputBusca: "",
+      venderForm: {
+        canalId: null,
+        produtoId: "",
+        quantidade: 1,
+        precoRecebido: 0,
+        mlOrderId: "",
+        trackingCode: "",
+      },
     };
+  },
+  watch: {
+    canais: {
+      immediate: true,
+      handler(novosCanais) {
+        if (!this.venderForm.canalId && novosCanais?.length) {
+          this.venderForm.canalId = novosCanais[0].id;
+        }
+      },
+    },
+    vendasFiltradas() {
+      this.paginaAtual = 1;
+    },
   },
   computed: {
     isAdmin() {
@@ -193,6 +304,81 @@ const HistoricoView = {
     },
   },
   methods: {
+    abrirVenderModal() {
+      if (this.canais?.length && !this.venderForm.canalId) {
+        this.venderForm.canalId = this.canais[0].id;
+      }
+      this.venderModal.aberto = true;
+    },
+    fecharVenderModal() {
+      this.venderModal.aberto = false;
+      this.inputBusca = "";
+      this.venderForm = {
+        canalId: this.canais?.[0]?.id || null,
+        produtoId: "",
+        quantidade: 1,
+        precoRecebido: 0,
+        mlOrderId: "",
+        trackingCode: "",
+      };
+    },
+    mudarCanal(canal) {
+      this.venderForm.canalId = canal.id;
+      if (this.venderForm.produtoId) this.aoSelecionarPeloNome();
+    },
+    aoSelecionarPeloNome() {
+      const p = this.produtos.find((i) => i.nome === this.inputBusca);
+      if (p) {
+        this.venderForm.produtoId = p.id;
+        this.venderForm.precoRecebido =
+          this.venderForm.canalId === 2
+            ? p.precoSugerShopee || 0
+            : p.precoSugerMl || 0;
+      } else {
+        this.venderForm.produtoId = "";
+      }
+    },
+    getCustoProduto() {
+      const p = this.produtos.find((i) => i.id === this.venderForm.produtoId);
+      return p ? Number(p.custo).toFixed(2) : "0.00";
+    },
+    calcularLucro() {
+      const p = this.produtos.find((i) => i.id === this.venderForm.produtoId);
+      if (!p) return "0.00";
+      const entradaLiquida = Number(this.venderForm.precoRecebido);
+      const custoUnitario = Number(p.custo);
+      return ((entradaLiquida - custoUnitario) * this.venderForm.quantidade).toFixed(2);
+    },
+    async salvar() {
+      const canalObj = this.canais.find((c) => c.id === this.venderForm.canalId);
+      if (!canalObj) {
+        alert("Selecione um canal válido antes de salvar.");
+        return;
+      }
+
+      const { error } = await apiPost("/api/vendas", {
+        produtoId: this.venderForm.produtoId,
+        quantidade: this.venderForm.quantidade,
+        precoVendaUnitario: this.venderForm.precoRecebido,
+        canalId: this.venderForm.canalId,
+        canalNome: canalObj.nome,
+        mlOrderId: this.venderForm.mlOrderId || null,
+        trackingCode: this.venderForm.trackingCode?.toUpperCase() || null,
+      })
+        .then(() => ({ error: null }))
+        .catch((err) => ({ error: err }));
+
+      if (!error) {
+        this.$emit("notificar", {
+          titulo: "Sucesso!",
+          texto: `Venda ${canalObj.nome.toUpperCase()} registrada com sucesso.`,
+        });
+        this.$emit("refresh", "vendas");
+        this.fecharVenderModal();
+      } else {
+        alert("Erro ao salvar venda.");
+      }
+    },
     copiarCodigo(c) {
       navigator.clipboard.writeText(c);
       this.$emit("notificar", {
