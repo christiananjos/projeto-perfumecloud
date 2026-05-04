@@ -1,58 +1,152 @@
-# 🧴 PerfumeCloud Pro - Sistema de Gestão de Estoque e Vendas
+# PerfumeCloud Pro — Sistema de Gestão de Vendas
 
-Sistema web e mobile para gerenciamento de estoque de perfumes importados e árabes, com foco em automação de lucros e controle operacional para Mercado Livre.
+Sistema web para gerenciamento de estoque, vendas e precificação de perfumes nos canais Mercado Livre e Shopee. Construído com Vue 3 via CDN, sem etapa de build.
 
-## 🚀 Funcionalidades Atualizadas (Dezembro 2025)
+---
 
-- **Controle de Acesso por Nível (RBAC):**
-  - **Admin:** Controle total (Inserir, Editar, Excluir, Ajustar Taxas).
-  - **Vendedor:** Acesso restrito (Apenas Listagem e Inserção). Botões de edição e exclusão são bloqueados com avisos de permissão.
-- **Autenticação por Username:** Sistema de login simplificado usando apenas usuário e senha (sem necessidade de digitar e-mail completo).
-- **Cálculo Automatizado de Lucro:** Injeção automática de margem no cadastro de novos itens.
-- **Layout Zero Scroll:** Interface otimizada para ocupar 95% da tela vertical, garantindo que os dados principais estejam sempre visíveis sem rolagem em dispositivos móveis.
+## Tecnologias
 
-## 📈 Lógica de Precificação e Lucro
+| Camada | Tecnologia |
+|---|---|
+| Frontend | Vue 3 (CDN), Tailwind CSS (CDN), Chart.js, Font Awesome 6 |
+| Backend | Azure Web Services (API REST) |
+| Edge Functions | Supabase + Deno (scraper de anúncios ML) |
+| Autenticação | JWT armazenado em localStorage |
 
-O sistema utiliza uma fórmula global para sugerir o preço de venda no Mercado Livre, garantindo a margem desejada após os custos operacionais.
+---
 
-**Fórmula do Preço Sugerido:**
-> `Preço Sugerido = (Custo Base * 1.30) + Taxa Fixa ML`
+## Como rodar localmente
 
-* **Margem de 30%:** Lucro líquido sobre o valor de custo.
-* **Taxa Fixa (R$):** Valor configurável na tela de Ajustes (atualmente definido em **R$ 60,00**).
+O projeto é HTML/JS puro — não há `package.json` nem etapa de build. Basta servir os arquivos estáticos:
 
-### Exemplo de Cálculo:
-Se um perfume custa **R$ 100,00**:
-1.  Lucro (30%): R$ 30,00
-2.  Taxa ML: R$ 60,00
-3.  **Preço Final: R$ 190,00**
+```bash
+# Python
+python -m http.server 8000
 
-## 🗄️ Estrutura do Banco de Dados (Supabase)
+# Node.js
+npx serve
 
-### Tabela `produtos`
-| Coluna | Tipo | Descrição |
-| :--- | :--- | :--- |
-| `id` | int8 | Identificador único |
-| `nome` | text | Nome do Perfume / Marca |
-| `custo` | numeric | Preço pago ao fornecedor |
-| `inspiracao` | text | Referência olfativa |
-| `preco_suger_ml` | numeric | Valor de venda calculado |
+# PHP
+php -S localhost:8000
+```
 
-### Tabela `vendas`
-| Coluna | Tipo | Descrição |
-| :--- | :--- | :--- |
-| `produto_id` | int8 | FK para a tabela produtos |
-| `nome_produto_snapshot` | text | Nome do item no momento da venda |
-| `quantidade` | int4 | Unidades vendidas |
-| `preco_venda_unitario`| numeric | Valor real da venda |
-| `lucro_liquido` | numeric | Lucro real (Venda - Custo - Taxa) |
-| `ml_order_id` | text | ID do pedido no Mercado Livre |
-| `tracking_code` | text | Código de rastreio dos Correios |
+Acesse em `http://localhost:8000`.
 
-## 🛠️ Comandos de Manutenção (SQL)
+A URL da API está definida em `index.html`:
+```javascript
+window.API_URL = 'https://marketplacemanagement-hzhygwdfaxfnbnga.brazilsouth-01.azurewebsites.net'
+```
 
-Para resetar todos os preços do estoque conforme a regra de 30% + R$ 60,00:
+### Supabase local (Edge Functions)
 
-```sql
-UPDATE produtos 
-SET preco_suger_ml = ROUND((custo::numeric * 1.30) + 60, 2);
+```bash
+supabase start   # inicia PostgreSQL + API local
+```
+
+---
+
+## Estrutura de arquivos
+
+```
+projeto-perfumecloud/
+├── index.html                    # SPA principal
+├── assets/
+│   ├── css/style.css
+│   └── js/
+│       ├── app.js                # Instância Vue 3 + roteamento
+│       ├── api.js                # Client HTTP com JWT
+│       └── components/
+│           ├── Login.js
+│           ├── Dashboard.js
+│           ├── Estoque.js
+│           ├── Vender.js
+│           ├── Historico.js
+│           ├── Configuracoes.js
+│           ├── AnaliseView.js
+│           └── EstrategiaAds.js
+└── supabase/
+    └── functions/analisar-anuncio/   # Edge Function Deno
+```
+
+---
+
+## Módulos do sistema
+
+### Dashboard
+KPIs de faturamento, lucro e quantidade de vendas com comparação percentual ao mês anterior. Gráfico de barras (últimos 6 meses) e donut (top 5 produtos por lucro). Filtro por mês.
+
+### Vender
+Registro rápido de vendas com autocomplete de produtos. Calcula lucro líquido em tempo real. Aceita Order ID do ML e código de rastreio como campos opcionais.
+
+### Histórico
+Lista paginada de vendas com filtro por canal (ML/Shopee) e busca por texto. Admin pode editar e excluir registros.
+
+### Estoque
+CRUD de produtos com cálculo automático de preço sugerido para ML e Shopee. Tabela paginada (10/20/50 itens) com filtros por nome e preço.
+
+### Scanner ML (`AnaliseView`)
+Analisa anúncios do Mercado Livre via URL. Detecta: produto CBT (China), fora de cobertura de entrega, reputação do vendedor e status Mercado Líder. Usa Supabase Edge Function.
+
+### Estratégia Ads (`EstrategiaAds`)
+Upload de relatórios CSV/XLSX de campanhas. Dois modos de análise:
+- **Rentabilidade** — margem estável, ROAS conservador
+- **Visibilidade** — margem 5%, ROAS agressivo para ranking
+
+### Configurações
+Ajuste de taxas globais (comissão % e frete fixo do ML) com aplicação em massa a todos os produtos. Gerenciamento de canais de venda.
+
+---
+
+## Precificação
+
+**Mercado Livre:**
+```
+Preço Sugerido = (Custo × 1.30) + Taxa Fixa ML
+```
+Exemplo: custo R$ 100 → margem R$ 30 + taxa R$ 60 = **R$ 190**
+
+**Shopee (4 faixas):**
+| Faixa | Comissão | Taxa Fixa |
+|---|---|---|
+| Até R$ 79,99 | 20% | R$ 4 |
+| R$ 80–99,99 | 14% | R$ 16 |
+| R$ 100–199,99 | 14% | R$ 20 |
+| Acima de R$ 200 | 14% | R$ 26 |
+
+---
+
+## Controle de acesso (RBAC)
+
+| Ação | Admin | Vendedor |
+|---|---|---|
+| Visualizar dashboard e histórico | ✅ | ✅ |
+| Registrar venda | ✅ | ✅ |
+| Criar produto | ✅ | ❌ |
+| Editar / excluir produto | ✅ | ❌ |
+| Ajustar taxas e canais | ✅ | ❌ |
+| Editar / excluir venda | ✅ | ❌ |
+
+A role é extraída do claim do JWT retornado pelo backend.
+
+---
+
+## Autenticação
+
+Login com **usuário + senha** (sem e-mail). O frontend converte internamente para `username@meusistema.com` antes de enviar ao backend. O token JWT é armazenado em `localStorage` e enviado em todas as requisições via `Authorization: Bearer <token>`.
+
+---
+
+## Principais endpoints da API
+
+| Método | Rota | Descrição |
+|---|---|---|
+| POST | `/api/auth/login` | Autenticação |
+| GET/POST | `/api/produtos` | Listar / criar produto |
+| PUT | `/api/produtos/:id` | Editar produto |
+| PATCH | `/api/produtos/:id/inativar` | Desativar produto |
+| GET/POST | `/api/vendas` | Listar / registrar venda |
+| PUT/DELETE | `/api/vendas/:id` | Editar / excluir venda |
+| GET | `/api/configuracoes` | Obter taxas globais |
+| PATCH | `/api/configuracoes/ml/aplicar-em-todos` | Aplicar taxas em massa |
+| GET/POST | `/api/canais` | Listar / criar canal |
+| PATCH | `/api/canais/:id/desativar` | Desativar canal |
