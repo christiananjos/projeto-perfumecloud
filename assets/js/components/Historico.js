@@ -49,8 +49,8 @@ const HistoricoView = {
                                 <div class="flex flex-col text-left">
                                     <span class="text-slate-700 font-black truncate text-[11px] md:text-sm uppercase tracking-tighter">{{ v.nomeProdutoSnapshot }}</span>
                                     <div class="md:hidden flex flex-wrap items-center gap-1 mt-1 font-bold text-[8px]">
-                                        <span :class="v.canal === 'SHOPEE' ? 'text-orange-600' : 'text-orange-400'" class="uppercase italic">
-                                            [{{ v.canal }}]
+                                        <span :class="canalLabel(v.canal) === 'SHOPEE' ? 'text-orange-600' : 'text-orange-400'" class="uppercase italic">
+                                            [{{ canalLabel(v.canal) }}]
                                         </span>
                                         <span v-if="v.mlOrderId" class="text-slate-500">#{{ v.mlOrderId }}</span>
                                         <span v-if="v.trackingCode" class="text-blue-500 uppercase">| {{ v.trackingCode }}</span>
@@ -61,9 +61,9 @@ const HistoricoView = {
                             <td class="py-5 px-6 hidden md:table-cell">
                                 <div class="flex flex-col gap-1 text-center items-center">
                                     <div class="flex items-center gap-2">
-                                        <span :class="v.canal === 'SHOPEE' ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-700 border-orange-100'"
+                                        <span :class="canalLabel(v.canal) === 'SHOPEE' ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-700 border-orange-100'"
                                               class="px-2 py-0.5 rounded text-[8px] font-black uppercase border italic">
-                                            {{ v.canal }}
+                                            {{ canalLabel(v.canal) }}
                                         </span>
                                         <span v-if="v.mlOrderId" class="text-[10px] text-slate-400 font-black italic uppercase">
                                             #{{ v.mlOrderId }}
@@ -289,7 +289,7 @@ const HistoricoView = {
           (v.nomeProdutoSnapshot || "").toLowerCase().includes(t) ||
           (v.mlOrderId || "").toLowerCase().includes(t) ||
           (v.trackingCode || "").toLowerCase().includes(t);
-        const matchCanal = canal === "todos" || v.canal === canal;
+        const matchCanal = canal === "todos" || this.canalLabel(v.canal) === canal;
         return matchBusca && matchCanal;
       });
     },
@@ -304,6 +304,12 @@ const HistoricoView = {
     },
   },
   methods: {
+    canalLabel(nome) {
+      const n = (nome || "").toUpperCase();
+      if (n.includes("LIVRE") || n === "ML") return "ML";
+      if (n.includes("SHOPEE")) return "SHOPEE";
+      return n;
+    },
     abrirVenderModal() {
       if (this.canais?.length && !this.venderForm.canalId) {
         this.venderForm.canalId = this.canais[0].id;
@@ -347,10 +353,15 @@ const HistoricoView = {
       if (!p) return "0.00";
       const entradaLiquida = Number(this.venderForm.precoRecebido);
       const custoUnitario = Number(p.custo);
-      return ((entradaLiquida - custoUnitario) * this.venderForm.quantidade).toFixed(2);
+      return (
+        (entradaLiquida - custoUnitario) *
+        this.venderForm.quantidade
+      ).toFixed(2);
     },
     async salvar() {
-      const canalObj = this.canais.find((c) => c.id === this.venderForm.canalId);
+      const canalObj = this.canais.find(
+        (c) => c.id === this.venderForm.canalId,
+      );
       if (!canalObj) {
         alert("Selecione um canal válido antes de salvar.");
         return;
@@ -361,7 +372,7 @@ const HistoricoView = {
         quantidade: this.venderForm.quantidade,
         precoVendaUnitario: this.venderForm.precoRecebido,
         canalId: this.venderForm.canalId,
-        canalNome: canalObj.nome,
+        canalNome: this.canalLabel(canalObj.nome),
         mlOrderId: this.venderForm.mlOrderId || null,
         trackingCode: this.venderForm.trackingCode?.toUpperCase() || null,
       })
@@ -371,7 +382,7 @@ const HistoricoView = {
       if (!error) {
         this.$emit("notificar", {
           titulo: "Sucesso!",
-          texto: `Venda ${canalObj.nome.toUpperCase()} registrada com sucesso.`,
+          texto: `Venda ${this.canalLabel(canalObj.nome)} registrada com sucesso.`,
         });
         this.$emit("refresh", "vendas");
         this.fecharVenderModal();
