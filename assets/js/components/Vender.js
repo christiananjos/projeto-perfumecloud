@@ -72,13 +72,13 @@ const VenderView = {
                     </div>
                 </div>
 
-                <div class="text-center py-4 md:py-6 bg-slate-50 rounded-[2rem] border border-slate-100 relative overflow-hidden">
-                    <label class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest relative z-10 font-black italic">Recebimento Total</label>
-                    <div class="flex items-center justify-center gap-2 font-bold text-slate-900 relative z-10">
-                        <span class="text-xl md:text-2xl italic text-slate-300">R$</span>
-                        <span class="text-4xl md:text-5xl tracking-tighter">{{ (form.precoRecebido * form.quantidade).toFixed(2) }}</span>
+                <div class="text-center py-4 md:py-6 bg-emerald-50 rounded-[2rem] border border-emerald-100 relative overflow-hidden">
+                    <label class="text-[9px] md:text-[10px] font-bold text-emerald-500 uppercase tracking-widest relative z-10 font-black italic">Lucro Líquido Total</label>
+                    <div class="flex items-center justify-center gap-2 font-bold text-emerald-700 relative z-10">
+                        <span class="text-xl md:text-2xl italic text-emerald-300">R$</span>
+                        <span class="text-4xl md:text-5xl tracking-tighter">{{ calcularLucroSimples() }}</span>
                     </div>
-                    <i class="fa-solid fa-money-bill-trend-up absolute -right-4 -bottom-4 text-slate-200/40 text-6xl md:text-7xl rotate-12"></i>
+                    <i class="fa-solid fa-money-bill-trend-up absolute -right-4 -bottom-4 text-emerald-200/40 text-6xl md:text-7xl rotate-12"></i>
                 </div>
 
                 <button @click="salvar" :disabled="!form.produtoId || form.quantidade < 1" 
