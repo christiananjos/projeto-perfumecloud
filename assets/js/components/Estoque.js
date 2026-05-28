@@ -124,6 +124,14 @@ const EstoqueView = {
                         <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Inspiração / Cor / Variação</label>
                     <input v-model.trim="form.inspiracao" type="text" class="input-soft" :disabled="salvando">
                     </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-gray-400 uppercase ml-2">Tipo de Produto</label>
+                        <select v-model="form.tipoId" class="input-soft" :disabled="salvando">
+                            <option :value="null">— Selecione um tipo —</option>
+                            <option v-for="t in tipos" :key="t.id" :value="t.id">{{ t.nome }}</option>
+                        </select>
+                    </div>
                     
                     <div class="space-y-1">
                         <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Estoque (unidades)</label>
@@ -190,7 +198,7 @@ const EstoqueView = {
             </div>
         </div>
     </div>`,
-  props: ["produtos", "userRole", "taxas"],
+  props: ["produtos", "userRole", "taxas", "tipos"],
   data() {
     return {
       paginaAtual: 1,
@@ -211,6 +219,7 @@ const EstoqueView = {
         taxa_ml: 0,
         frete_fixo: 0,
         estoque: 0,
+        tipoId: null,
       },
     };
   },
@@ -349,6 +358,7 @@ const EstoqueView = {
               ? Number(p.mktpFreteOverride)
               : this.taxas.ml_frete,
           estoque: p.estoque ?? 0,
+          tipoId: p.tipoId ?? null,
         };
       } else {
         this.modoEdicao = false;
@@ -363,6 +373,7 @@ const EstoqueView = {
           taxa_ml: this.taxas.ml_comissao,
           frete_fixo: this.taxas.ml_frete,
           estoque: 0,
+          tipoId: null,
         };
         this.autoCalcularTudo();
       }
@@ -408,6 +419,7 @@ const EstoqueView = {
         mktpTaxaOverride: this.toValidNumber(this.form.taxa_ml),
         mktpFreteOverride: this.toValidNumber(this.form.frete_fixo),
         estoque: this.toValidNumber(this.form.estoque),
+        tipoId: this.form.tipoId || null,
       };
 
       this.salvando = true;
