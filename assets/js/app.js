@@ -98,7 +98,9 @@ const app = createApp({
         const [configs, canais, tipos, produtos, vendas] = await Promise.all([
           precisaConfigs ? apiGet("/api/configuracoes") : Promise.resolve(null),
           precisaCanais ? apiGet("/api/canais") : Promise.resolve(null),
-          precisaTipos ? apiGet("/api/tipos-produto").catch(() => []) : Promise.resolve(null),
+          precisaTipos
+            ? apiGet("/api/tipos-produto").catch(() => [])
+            : Promise.resolve(null),
           precisaProdutos ? apiGet("/api/produtos") : Promise.resolve(null),
           precisaVendas ? apiGet("/api/vendas") : Promise.resolve(null),
         ]);
