@@ -37,6 +37,7 @@ const app = createApp({
       produtos: [],
       vendas: [],
       canais: [], // ADICIONADO: Lista de canais vinda do banco
+      tipos: [],  // ADICIONADO: Tipos de produto
       taxas: {
         ml_comissao: 12,
         ml_frete: 22.45,
@@ -89,12 +90,15 @@ const app = createApp({
         const precisaConfigs = scope === "all" || scope === "configuracoes";
         const precisaCanais =
           scope === "all" || scope === "configuracoes" || scope === "canais";
+        const precisaTipos =
+          scope === "all" || scope === "configuracoes" || scope === "tipos";
         const precisaProdutos = scope === "all" || scope === "produtos";
         const precisaVendas = scope === "all" || scope === "vendas";
 
-        const [configs, canais, produtos, vendas] = await Promise.all([
+        const [configs, canais, tipos, produtos, vendas] = await Promise.all([
           precisaConfigs ? apiGet("/api/configuracoes") : Promise.resolve(null),
           precisaCanais ? apiGet("/api/canais") : Promise.resolve(null),
+          precisaTipos ? apiGet("/api/tipos-produto") : Promise.resolve(null),
           precisaProdutos ? apiGet("/api/produtos") : Promise.resolve(null),
           precisaVendas ? apiGet("/api/vendas") : Promise.resolve(null),
         ]);
@@ -108,6 +112,9 @@ const app = createApp({
         }
         if (precisaCanais) {
           this.canais = (canais || []).map(normalizeCanal);
+        }
+        if (precisaTipos) {
+          this.tipos = tipos || [];
         }
         if (precisaProdutos) {
           this.produtos = produtos || [];
@@ -147,6 +154,7 @@ const app = createApp({
       this.produtos = [];
       this.vendas = [];
       this.canais = [];
+      this.tipos = [];
     },
   },
   mounted() {

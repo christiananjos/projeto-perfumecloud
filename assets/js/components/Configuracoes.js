@@ -73,6 +73,32 @@ const ConfiguracoesView = {
             </div>
         </div>
 
+        <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 md:p-10 space-y-6">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b pb-4 italic">Tipos de Produto</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div v-for="t in tipos" :key="t.id" class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-tag text-blue-400 text-xs"></i>
+                        <span class="font-black text-slate-700 uppercase italic text-xs tracking-tighter">{{ t.nome }}</span>
+                    </div>
+                    <button v-if="isAdmin" @click="excluirTipo(t.id)" class="text-red-200 hover:text-red-500 transition-colors">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="isAdmin" class="bg-blue-50/50 p-6 rounded-[1.5rem] border border-dashed border-blue-200 mt-6">
+                <p class="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-4 italic">Cadastrar Novo Tipo</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input v-model="novoTipo.nome" type="text" placeholder="Ex: Perfume, Eletrônico, Roupa..." class="input-soft !bg-white">
+                    <button @click="adicionarTipo" class="bg-slate-900 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-800 transition-all">
+                        <i class="fa-solid fa-plus mr-2"></i> Criar Tipo
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="bg-slate-900 rounded-[1.5rem] p-5 flex items-center gap-4 border border-slate-800 shrink-0">
             <div class="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
                 <i class="fa-solid fa-circle-info text-blue-400 text-xs"></i>
@@ -82,11 +108,12 @@ const ConfiguracoesView = {
             </p>
         </div>
     </div>`,
-  props: ["userRole", "taxas", "canais"], // Agora recebe a prop canais
+  props: ["userRole", "taxas", "canais", "tipos"],
   data() {
     return {
       localTaxas: { ...this.taxas },
       novoCanal: { nome: "", corHex: "#3b82f6" },
+      novoTipo: { nome: "" },
     };
   },
   computed: {
@@ -139,6 +166,29 @@ const ConfiguracoesView = {
       try {
         await apiPatch(`/api/canais/${id}/desativar`);
         this.$emit("refresh", "canais");
+      } catch (err) {
+        console.error(err);
+      }
+    },
+    async adicionarTipo() {
+      if (!this.novoTipo.nome) return;
+      try {
+        await apiPost("/api/tipos-produto", { nome: this.novoTipo.nome });
+        this.$emit("notificar", {
+          titulo: "Tipo Criado!",
+          texto: "O novo tipo já está disponível ao cadastrar produtos.",
+        });
+        this.novoTipo = { nome: "" };
+        this.$emit("refresh", "configuracoes");
+      } catch (err) {
+        console.error(err);
+      }
+    },
+    async excluirTipo(id) {
+      if (!confirm("Deseja realmente remover este tipo de produto?")) return;
+      try {
+        await apiPatch(`/api/tipos-produto/${id}/desativar`);
+        this.$emit("refresh", "configuracoes");
       } catch (err) {
         console.error(err);
       }
