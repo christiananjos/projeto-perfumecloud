@@ -37,7 +37,7 @@ const app = createApp({
       produtos: [],
       vendas: [],
       canais: [], // ADICIONADO: Lista de canais vinda do banco
-      tipos: [],  // ADICIONADO: Tipos de produto
+      tipos: [], // ADICIONADO: Tipos de produto
       taxas: {
         ml_comissao: 12,
         ml_frete: 22.45,
