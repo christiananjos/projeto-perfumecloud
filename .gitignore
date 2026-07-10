@@ -1,0 +1,24 @@
+node_modules/
+.env
+.env.local
+dist/
+build/
+*.log
+
+# Claude
+.claude/settings.local.json
+.claude/*.log
+CLAUDE.local.md
+
+# Sonar
+.scannerwork/
+.sonar/
+sonar-report.json
+
+# Cobertura de testes
+coverage/
+coverage-report/
+.nyc_output/
+*.lcov
+htmlcov/
+.coverage
