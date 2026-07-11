@@ -4,7 +4,7 @@
 
 ## Padrão
 
-SPA em **Vue 3 (Options API)**, carregado via `<script>` de CDN (`unpkg.com/vue@3`) — **sem bundler, sem `package.json`, sem etapa de build** em produção. Tailwind CSS e Chart.js também via CDN. Servido como arquivos estáticos (Azure App Service, ver `.github/workflows/deploy.yml` e `.github/workflows/nginx.conf`).
+SPA em **Vue 3 (Options API)**, carregado via `<script>` de CDN (`unpkg.com/vue@3.4.38`, com SRI) — **sem bundler de JS**. Chart.js e Font Awesome também via CDN com SRI. **Tailwind CSS é gerado via CLI** (`npm run build:css`), não é mais carregado do Play CDN — o build roda no CI a cada deploy (`.github/workflows/deploy.yml`), o CSS gerado (`assets/css/tailwind.css`) não é commitado. Servido como arquivos estáticos (Azure App Service, ver `.github/workflows/deploy.yml` e `.github/workflows/nginx.conf`).
 
 ## Estrutura
 
@@ -33,10 +33,18 @@ Antes desta auditoria, o projeto não tinha `package.json` nem nenhum teste. Foi
 
 - **SSRF na Edge Function `analisar-anuncio`** — aceitava qualquer `url` do cliente e fazia `fetch` no servidor sem validar domínio (`verify_jwt=true` não protege, pois a anon key é pública). Corrigido: `isAllowedUrl()` restringe a domínios do Mercado Livre (`mercadolivre.com.br` e subdomínios) e exige HTTPS antes de qualquer fetch. **Atualização**: a Edge Function foi removida (ver seção "Estrutura" acima) — essa mesma validação de allowlist agora vive em `AnaliseAnuncioService.IsAllowedUrl` no backend .NET.
 - **Fallback de papel inseguro** — `api.js` (`buildSessionFromToken`) e `Login.js` tratavam a ausência do claim `role` no JWT como `"admin"`, dando privilégio máximo por padrão. Corrigido para usar o fallback já seguro de `normalizeRole` (`"vendedor"`).
-- **CDNs sem versão fixa nem SRI** — Vue, Chart.js e Font Awesome agora carregam de versão fixa (`vue@3.4.38`, `chart.js@4.4.4`, `font-awesome@6.4.0` já estava fixo) com `integrity`+`crossorigin`. **Tailwind (`cdn.tailwindcss.com`) não pôde receber SRI**: verificado nesta auditoria que o CDN não envia `Access-Control-Allow-Origin`, então `crossorigin="anonymous"` bloqueia o carregamento por CORS (confirmado com Playwright — a página ficava sem estilo). Mantido só com versão fixada (`/3.4.17`); o próprio Tailwind avisa no console que este CDN não é recomendado para produção — migrar para Tailwind CLI/PostCSS resolveria isso de vez, mas é uma mudança maior (introduz build step), fora do escopo desta auditoria.
+- **CDNs sem versão fixa nem SRI** — Vue, Chart.js e Font Awesome carregam de versão fixa (`vue@3.4.38`, `chart.js@4.4.4`, `font-awesome@6.4.0`) com `integrity`+`crossorigin`. **Tailwind não pôde receber SRI enquanto era Play CDN** (`cdn.tailwindcss.com` não envia `Access-Control-Allow-Origin`, `crossorigin="anonymous"` bloqueava o carregamento por CORS). **Atualização**: migrado para Tailwind CLI (`npm run build:css`, gerado no CI) — o problema de SRI/CORS deixa de existir porque o CSS agora é um asset do próprio domínio, não um script de terceiro.
 - **RBAC client-side (`isAdmin`) é só UI** — ver seção "Autenticação e autorização" acima. Validado e corrigido no backend nesta mesma auditoria.
 - **Historico.js**: botão de editar venda não tinha nenhum gate de `isAdmin` (nem visual) — qualquer usuário logado via UI conseguia abrir a edição. Corrigido na revisão de código (ver commit de code review).
 - JWT em `localStorage` — aceito como trade-off do projeto (SPA sem cookie httpOnly); mitigação é nunca introduzir `v-html` com dado não confiável (ver skill `vue-security-audit`).
+
+## Build do CSS (Tailwind CLI, 2026-07)
+
+- Fonte: `assets/css/tailwind.src.css` (diretivas `@tailwind base/components/utilities`). `tailwind.config.js` escaneia `./index.html` **e** `./assets/js/**/*.js` — os templates Vue ficam como string dentro dos `.js` (`template: \`...\``), então o scanner de conteúdo do Tailwind precisa cobrir esses arquivos, não só o HTML.
+- Gerado: `assets/css/tailwind.css` (minificado, via `npm run build:css`) — **não commitado** (`.gitignore`), gerado no CI a cada deploy (`.github/workflows/deploy.yml`, step "Build do CSS (Tailwind)").
+- **Rodar localmente**: `npm run build:css` antes de servir os arquivos estáticos, ou `npm run watch:css` em paralelo durante desenvolvimento (o CSS não fica mais disponível "de graça" via CDN).
+- Ordem de carregamento em `index.html`: `tailwind.css` antes de `style.css` (customizações do projeto podem sobrescrever utilitários do Tailwind por cascata).
+- Risco conhecido: o scanner de conteúdo do Tailwind não detecta classes montadas dinamicamente via concatenação de string em runtime (ex: `'bg-' + cor + '-500'`) — verificado nesta migração que o projeto não usa esse padrão (só bindings de `:style` com `corHex`/`cor_hex`, não classes Tailwind dinâmicas).
 
 ## Revisão de código (auditoria 2026-07)
 

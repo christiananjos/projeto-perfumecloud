@@ -16,20 +16,27 @@ Sistema web para gerenciamento de estoque, vendas e precificação de perfumes n
 
 ## Como rodar localmente
 
-O projeto é HTML/JS puro — não há `package.json` nem etapa de build. Basta servir os arquivos estáticos:
+O JS é puro (sem bundler), mas o CSS do Tailwind precisa ser gerado antes de servir:
 
 ```bash
-# Python
-python -m http.server 8000
-
-# Node.js
-npx serve
-
-# PHP
-php -S localhost:8000
+npm install
+npm run build:css   # gera assets/css/tailwind.css (ou use npm run watch:css durante o desenvolvimento)
 ```
 
-Acesse em `http://localhost:8000`.
+Depois, sirva os arquivos estáticos numa porta liberada pelo CORS do backend (**3000**, **5173** ou **5500** — não 8000):
+
+```bash
+# Node.js
+npx serve -l 3000
+
+# Python
+python -m http.server 3000
+
+# PHP
+php -S localhost:3000
+```
+
+Acesse em `http://localhost:3000`.
 
 A URL da API está definida em `index.html`:
 

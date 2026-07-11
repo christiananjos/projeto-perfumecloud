@@ -22,3 +22,6 @@ coverage-report/
 *.lcov
 htmlcov/
 .coverage
+
+# CSS gerado pelo Tailwind CLI (build:css) - gerado no CI a cada deploy, não commitado
+assets/css/tailwind.css
