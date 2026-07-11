@@ -1,4 +1,5 @@
 import { apiPut, apiDelete, apiPost } from "../api.js";
+import { canalLabel, precoSugeridoPorCanal, custoProduto, calcularLucroVenda } from "../venda-utils.js";
 
 const HistoricoView = {
   template: `
@@ -79,7 +80,7 @@ const HistoricoView = {
                             </td>
                             <td class="py-2 md:py-5 px-4 md:px-6 text-center">
                                 <div class="flex items-center justify-center gap-3">
-                                    <button @click="abrirEdicao(v)" class="text-blue-400 hover:text-blue-600 transition-transform active:scale-90"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button @click="abrirEdicao(v)" :class="isAdmin ? 'text-blue-400 hover:text-blue-600' : 'text-gray-50 cursor-not-allowed'" class="transition-transform active:scale-90"><i class="fa-solid fa-pen-to-square"></i></button>
                                     <button @click="solicitarExclusao(v.id)" :class="isAdmin ? 'text-red-200 hover:text-red-500' : 'text-gray-50 cursor-not-allowed'"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </td>
@@ -304,12 +305,7 @@ const HistoricoView = {
     },
   },
   methods: {
-    canalLabel(nome) {
-      const n = (nome || "").toUpperCase();
-      if (n.includes("LIVRE") || n === "ML") return "ML";
-      if (n.includes("SHOPEE")) return "SHOPEE";
-      return n;
-    },
+    canalLabel,
     abrirVenderModal() {
       if (this.canais?.length && !this.venderForm.canalId) {
         this.venderForm.canalId = this.canais[0].id;
@@ -336,27 +332,19 @@ const HistoricoView = {
       const p = this.produtos.find((i) => i.nome === this.inputBusca);
       if (p) {
         this.venderForm.produtoId = p.id;
-        this.venderForm.precoRecebido =
-          this.venderForm.canalId === 2
-            ? p.precoSugerShopee || 0
-            : p.precoSugerMl || 0;
+        const canalObj = this.canais.find((c) => c.id === this.venderForm.canalId);
+        this.venderForm.precoRecebido = precoSugeridoPorCanal(p, canalObj?.nome);
       } else {
         this.venderForm.produtoId = "";
       }
     },
     getCustoProduto() {
       const p = this.produtos.find((i) => i.id === this.venderForm.produtoId);
-      return p ? Number(p.custo).toFixed(2) : "0.00";
+      return custoProduto(p);
     },
     calcularLucro() {
       const p = this.produtos.find((i) => i.id === this.venderForm.produtoId);
-      if (!p) return "0.00";
-      const entradaLiquida = Number(this.venderForm.precoRecebido);
-      const custoUnitario = Number(p.custo);
-      return (
-        (entradaLiquida - custoUnitario) *
-        this.venderForm.quantidade
-      ).toFixed(2);
+      return calcularLucroVenda(p, this.venderForm.precoRecebido, this.venderForm.quantidade);
     },
     async salvar() {
       const canalObj = this.canais.find(
@@ -387,17 +375,27 @@ const HistoricoView = {
         this.$emit("refresh", "vendas");
         this.fecharVenderModal();
       } else {
-        alert("Erro ao salvar venda.");
+        console.error("Erro ao registrar venda:", error);
+        alert(error?.message || "Erro ao salvar venda.");
       }
     },
-    copiarCodigo(c) {
-      navigator.clipboard.writeText(c);
-      this.$emit("notificar", {
-        titulo: "Copiado!",
-        texto: "Rastreio pronto para colar.",
-      });
+    async copiarCodigo(c) {
+      try {
+        await navigator.clipboard.writeText(c);
+        this.$emit("notificar", {
+          titulo: "Copiado!",
+          texto: "Rastreio pronto para colar.",
+        });
+      } catch (err) {
+        console.error("Erro ao copiar rastreio:", err);
+        this.$emit("notificar", {
+          titulo: "Erro",
+          texto: "Não foi possível copiar o rastreio.",
+        });
+      }
     },
     abrirEdicao(v) {
+      if (!this.isAdmin) return;
       const produto = this.produtos.find((p) => p.id === v.produtoId);
       this.editModal.custo_manual = produto ? Number(produto.custo) : 0;
       this.editModal.form = { ...v };
@@ -417,7 +415,11 @@ const HistoricoView = {
         this.$emit("refresh", "vendas");
         this.editModal.aberto = false;
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao atualizar venda:", err);
+        this.$emit("notificar", {
+          titulo: "Erro",
+          texto: err?.message || "Não foi possível atualizar a venda.",
+        });
       }
     },
     solicitarExclusao(id) {
@@ -429,10 +431,13 @@ const HistoricoView = {
       try {
         await apiDelete(`/api/vendas/${this.confirmModal.idParaExcluir}`);
         this.$emit("refresh", "vendas");
-      } catch (err) {
-        console.error(err);
-      } finally {
         this.confirmModal.aberto = false;
+      } catch (err) {
+        console.error("Erro ao excluir venda:", err);
+        this.$emit("notificar", {
+          titulo: "Erro",
+          texto: err?.message || "Não foi possível excluir a venda.",
+        });
       }
     },
   },

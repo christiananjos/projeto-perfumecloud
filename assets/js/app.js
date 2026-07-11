@@ -149,6 +149,7 @@ const app = createApp({
       this.carregarDados();
     },
     async fazerLogout() {
+      sessionStorage.setItem("justLoggedOut", "1");
       clearAuth();
       this.session = null;
       this.userRole = "vendedor";

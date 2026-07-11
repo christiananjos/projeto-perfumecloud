@@ -234,7 +234,6 @@ const EstrategiaAdsView = {
       selecionados: [],
       buscaProduto: "",
       listaAberta: false,
-      estoqueParado: "",
       modo: "RENTABILIDADE",
       carregando: false,
       resultado: null,
@@ -255,7 +254,31 @@ const EstrategiaAdsView = {
 
   methods: {
     onArquivo(e) {
-      this.arquivo = e.target.files[0] || null;
+      const file = e.target.files[0] || null;
+      if (!file) {
+        this.arquivo = null;
+        return;
+      }
+
+      const extensoesPermitidas = [".csv", ".xlsx", ".xls"];
+      const nomeMinusculo = file.name.toLowerCase();
+      const extensaoValida = extensoesPermitidas.some((ext) => nomeMinusculo.endsWith(ext));
+      const TAMANHO_MAX_BYTES = 10 * 1024 * 1024; // 10MB
+
+      if (!extensaoValida) {
+        alert("Arquivo inválido. Envie um relatório .csv, .xlsx ou .xls.");
+        e.target.value = "";
+        this.arquivo = null;
+        return;
+      }
+      if (file.size > TAMANHO_MAX_BYTES) {
+        alert("Arquivo muito grande (máximo 10MB).");
+        e.target.value = "";
+        this.arquivo = null;
+        return;
+      }
+
+      this.arquivo = file;
     },
 
     nomePorId(id) {
@@ -280,14 +303,12 @@ const EstrategiaAdsView = {
           form.append("estoqueFisico", nomes.join(", "));
         }
 
-        if (this.estoqueParado)
-          form.append("estoqueParado", this.estoqueParado);
-
         this.resultado = await apiUpload(
           "/api/estrategia/analisar-ads/upload",
           form,
         );
       } catch (err) {
+        console.error("Erro na análise de ads:", err);
         alert("Erro na análise: " + err.message);
       } finally {
         this.carregando = false;

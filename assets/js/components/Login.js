@@ -51,14 +51,15 @@ const LoginView = {
     };
   },
   mounted() {
-    // Quando o componente carrega, verificamos se viemos de um logout
-    // Se a sessão for nula e não houver erro, mostramos a mensagem
-    this.info = "Usuário desconectado";
-
-    // Remove a mensagem automaticamente após 5 segundos
-    setTimeout(() => {
-      this.info = "";
-    }, 5000);
+    // Só mostra a mensagem se viemos de um logout de verdade (flag setada por fazerLogout
+    // em app.js), não no primeiro carregamento da página.
+    if (sessionStorage.getItem("justLoggedOut")) {
+      sessionStorage.removeItem("justLoggedOut");
+      this.info = "Usuário desconectado";
+      setTimeout(() => {
+        this.info = "";
+      }, 5000);
+    }
   },
   methods: {
     async entrar() {

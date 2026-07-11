@@ -33,6 +33,17 @@ Antes desta auditoria, o projeto não tinha `package.json` nem nenhum teste. Foi
 - **Historico.js**: botão de editar venda não tinha nenhum gate de `isAdmin` (nem visual) — qualquer usuário logado via UI conseguia abrir a edição. Corrigido na revisão de código (ver commit de code review).
 - JWT em `localStorage` — aceito como trade-off do projeto (SPA sem cookie httpOnly); mitigação é nunca introduzir `v-html` com dado não confiável (ver skill `vue-security-audit`).
 
+## Revisão de código (auditoria 2026-07)
+
+- **`assets/js/venda-utils.js` (novo)** — extrai lógica antes duplicada entre `Vender.js` e o modal "Venda Rápida" de `Historico.js` (`canalLabel`, `precoSugeridoPorCanal`, `custoProduto`, `calcularLucroVenda`). Elimina o número mágico `canalId === 2` (assumia Shopee = ID 2, frágil já que canais são criados dinamicamente em `Configuracoes.js`) — agora resolve pelo nome do canal.
+- **`Historico.js`**: botão de editar venda não tinha nenhum gate de admin (nem visual); adicionado. `confirmarExclusao` fechava o modal mesmo quando a exclusão falhava (parecia ter funcionado); corrigido para só fechar no sucesso. `confirmarEdicao`/`confirmarExclusao`/`copiarCodigo` só logavam no console sem avisar o usuário; agora emitem `notificar` de erro.
+- **`Configuracoes.js`**: `adicionarCanal`/`excluirCanal`/`adicionarTipo`/`excluirTipo` não tinham checagem de `isAdmin` (só o botão ficava escondido); adicionado guard nos métodos. Todos os `catch` silenciosos agora notificam o usuário.
+- **`Estoque.js`**: `excluir` não tratava erro da API (exceção não tratada, sem feedback); corrigido com try/catch + notificação, e guard de `isAdmin` no método.
+- **`AnaliseView.js`**: erro do Scanner era descartado (`throw new Error()` sem mensagem, `catch` só mostrava alerta genérico); agora loga o erro real e propaga a mensagem quando disponível. `Object.values(data.alertas_criticos)` podia estourar se o campo viesse ausente da API — corrigido com fallback `{}`.
+- **`EstrategiaAds.js`**: upload de relatório não validava tipo/tamanho do arquivo antes de enviar (só o atributo `accept` do input, trivialmente contornável) — adicionada validação de extensão e tamanho máximo (10MB). Removido campo `estoqueParado` (dead code, nunca vinculado a nenhum input do template).
+- **`Login.js`**: `mounted()` sempre mostrava "Usuário desconectado", mesmo no primeiro carregamento da página (nunca logout de verdade). Corrigido com uma flag em `sessionStorage` setada por `fazerLogout()` em `app.js`, consumida uma única vez.
+- Verificado com smoke test headless (Playwright) após as mudanças: app carrega sem erros de console, tela de login renderiza corretamente.
+
 ## Convenção para novas features
 
 - Um componente por tela, registrado em `assets/js/app.js`, adicionado ao array `menu` se navegável.

@@ -136,11 +136,15 @@ const ConfiguracoesView = {
         this.$emit("refresh", "configuracoes");
         this.$emit("refresh", "produtos");
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao atualizar taxas:", err);
+        this.$emit("notificar", {
+          titulo: "Erro",
+          texto: err?.message || "Não foi possível atualizar as taxas.",
+        });
       }
     },
     async adicionarCanal() {
-      if (!this.novoCanal.nome) return;
+      if (!this.isAdmin || !this.novoCanal.nome) return;
       try {
         await apiPost("/api/canais", {
           nome: this.novoCanal.nome,
@@ -153,10 +157,15 @@ const ConfiguracoesView = {
         this.novoCanal = { nome: "", corHex: "#3b82f6" };
         this.$emit("refresh", "canais");
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao criar canal:", err);
+        this.$emit("notificar", {
+          titulo: "Erro",
+          texto: err?.message || "Não foi possível criar o canal.",
+        });
       }
     },
     async excluirCanal(id) {
+      if (!this.isAdmin) return;
       if (
         !confirm(
           "Deseja realmente remover este canal? Vendas vinculadas a ele podem perder a referência.",
@@ -167,11 +176,15 @@ const ConfiguracoesView = {
         await apiPatch(`/api/canais/${id}/desativar`);
         this.$emit("refresh", "canais");
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao remover canal:", err);
+        this.$emit("notificar", {
+          titulo: "Erro",
+          texto: err?.message || "Não foi possível remover o canal.",
+        });
       }
     },
     async adicionarTipo() {
-      if (!this.novoTipo.nome) return;
+      if (!this.isAdmin || !this.novoTipo.nome) return;
       try {
         await apiPost("/api/tipos-produto", { nome: this.novoTipo.nome });
         this.$emit("notificar", {
@@ -181,16 +194,25 @@ const ConfiguracoesView = {
         this.novoTipo = { nome: "" };
         this.$emit("refresh", "configuracoes");
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao criar tipo de produto:", err);
+        this.$emit("notificar", {
+          titulo: "Erro",
+          texto: err?.message || "Não foi possível criar o tipo de produto.",
+        });
       }
     },
     async excluirTipo(id) {
+      if (!this.isAdmin) return;
       if (!confirm("Deseja realmente remover este tipo de produto?")) return;
       try {
         await apiPatch(`/api/tipos-produto/${id}/desativar`);
         this.$emit("refresh", "configuracoes");
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao remover tipo de produto:", err);
+        this.$emit("notificar", {
+          titulo: "Erro",
+          texto: err?.message || "Não foi possível remover o tipo de produto.",
+        });
       }
     },
   },

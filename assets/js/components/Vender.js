@@ -1,4 +1,5 @@
 import { apiPost } from "../api.js";
+import { precoSugeridoPorCanal, custoProduto, calcularLucroVenda } from "../venda-utils.js";
 
 const VenderView = {
   template: `
@@ -121,27 +122,19 @@ const VenderView = {
       const p = this.produtos.find((i) => i.nome === this.inputBusca);
       if (p) {
         this.form.produtoId = p.id;
-        // Lógica de preço sugerido: Se for Canal 2 (Shopee), usa o sugerido da Shopee, senão ML
-        this.form.precoRecebido =
-          this.form.canalId === 2
-            ? p.precoSugerShopee || 0
-            : p.precoSugerMl || 0;
+        const canalObj = this.canais.find((c) => c.id === this.form.canalId);
+        this.form.precoRecebido = precoSugeridoPorCanal(p, canalObj?.nome);
       } else {
         this.form.produtoId = "";
       }
     },
     getCustoProduto() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
-      return p ? Number(p.custo).toFixed(2) : "0.00";
+      return custoProduto(p);
     },
     calcularLucroSimples() {
       const p = this.produtos.find((i) => i.id === this.form.produtoId);
-      if (!p) return "0.00";
-      const entradaLiquida = Number(this.form.precoRecebido);
-      const custoUnitario = Number(p.custo);
-      return ((entradaLiquida - custoUnitario) * this.form.quantidade).toFixed(
-        2,
-      );
+      return calcularLucroVenda(p, this.form.precoRecebido, this.form.quantidade);
     },
     async salvar() {
       const canalObj = this.canais.find((c) => c.id === this.form.canalId);
@@ -178,7 +171,8 @@ const VenderView = {
           trackingCode: "",
         };
       } else {
-        alert("Erro ao salvar venda.");
+        console.error("Erro ao registrar venda:", error);
+        alert(error?.message || "Erro ao salvar venda.");
       }
     },
   },

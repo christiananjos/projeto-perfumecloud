@@ -446,9 +446,22 @@ const EstoqueView = {
       }
     },
     async excluir(id) {
-      if (confirm("Excluir item?")) {
+      if (!this.isAdmin) return;
+      if (!confirm("Excluir item?")) return;
+
+      try {
         await apiPatch(`/api/produtos/${id}/inativar`);
         this.$emit("refresh", "produtos");
+        this.$emit("notificar", {
+          titulo: "Sucesso!",
+          texto: "Produto removido do estoque.",
+        });
+      } catch (err) {
+        console.error("Erro ao inativar produto:", err);
+        this.$emit("notificar", {
+          titulo: "Erro",
+          texto: err?.message || "Não foi possível remover o produto.",
+        });
       }
     },
   },

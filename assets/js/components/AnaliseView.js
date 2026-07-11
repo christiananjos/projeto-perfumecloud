@@ -106,9 +106,14 @@ const AnaliseView = {
   },
 
   methods: {
-    copiarJSON() {
-      navigator.clipboard.writeText(JSON.stringify(this.rawJSON, null, 2));
-      alert("JSON copiado!");
+    async copiarJSON() {
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(this.rawJSON, null, 2));
+        alert("JSON copiado!");
+      } catch (err) {
+        console.error("Erro ao copiar JSON:", err);
+        alert("Não foi possível copiar o JSON.");
+      }
     },
 
     async analisarAnuncio() {
@@ -122,21 +127,22 @@ const AnaliseView = {
           },
         );
 
-        if (error || !data.success) throw new Error();
+        if (error || !data?.success) {
+          throw new Error(data?.error || error?.message || "Falha ao analisar o anúncio.");
+        }
 
         this.rawJSON = data; // Armazena o retorno para exibir no pre
         this.reputacao = data.reputation_level.replace("_", " ");
         this.medalha = data.power_seller_status;
-        this.alertas = data.alertas_criticos;
+        this.alertas = data.alertas_criticos || {};
         this.vendas = data.sold_quantity;
         this.hasEnhanced = data.has_full_enhanced_descriptions;
-        this.temAlertas = Object.values(data.alertas_criticos).some(
-          (v) => v === true,
-        );
+        this.temAlertas = Object.values(this.alertas).some((v) => v === true);
 
         this.resultado = true;
       } catch (err) {
-        alert("Erro no Scanner.");
+        console.error("Erro no Scanner de anúncio:", err);
+        alert(err.message || "Erro no Scanner.");
       } finally {
         this.carregando = false;
       }
