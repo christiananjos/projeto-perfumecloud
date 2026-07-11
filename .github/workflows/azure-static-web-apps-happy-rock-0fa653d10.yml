@@ -19,6 +19,15 @@ jobs:
         with:
           submodules: true
           lfs: false
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - name: Instalar dependências
+        run: npm ci
+      - name: Build do CSS (Tailwind)
+        run: npm run build:css
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
