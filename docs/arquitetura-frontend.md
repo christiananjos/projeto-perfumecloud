@@ -4,7 +4,9 @@
 
 ## Padrão
 
-SPA em **Vue 3 (Options API)**, carregado via `<script>` de CDN (`unpkg.com/vue@3.4.38`, com SRI) — **sem bundler de JS**. Chart.js e Font Awesome também via CDN com SRI. **Tailwind CSS é gerado via CLI** (`npm run build:css`), não é mais carregado do Play CDN — o build roda no CI a cada deploy (`.github/workflows/deploy.yml`), o CSS gerado (`assets/css/tailwind.css`) não é commitado. Servido como arquivos estáticos (Azure App Service, ver `.github/workflows/deploy.yml` e `.github/workflows/nginx.conf`).
+SPA em **Vue 3 (Options API)**, carregado via `<script>` de CDN (`unpkg.com/vue@3.4.38`, com SRI) — **sem bundler de JS**. Chart.js e Font Awesome também via CDN com SRI. **Tailwind CSS é gerado via CLI** (`npm run build:css`), não é mais carregado do Play CDN — o CSS gerado (`assets/css/tailwind.css`) não é commitado.
+
+**Deploy**: Azure Static Web Apps, workflow gerado automaticamente pelo próprio Azure ao conectar o recurso ao repositório GitHub (`.github/workflows/azure-static-web-apps-*.yml`) — comando de build customizado `npm run build:css`, app location `/`. **Importante**: existia um `deploy.yml` antigo apontando para uma Azure App Service chamada `marketplacemanagement` — só que esse é o nome do recurso do **backend** (.NET API, ver `master_marketplacemanagement.yml` no repo do backend); rodar aquele workflow teria sobrescrito o deploy da API com os arquivos estáticos do frontend. Removido junto com `nginx.conf` (que era da mesma abordagem abandonada, App Service com container).
 
 ## Estrutura
 
@@ -41,7 +43,7 @@ Antes desta auditoria, o projeto não tinha `package.json` nem nenhum teste. Foi
 ## Build do CSS (Tailwind CLI, 2026-07)
 
 - Fonte: `assets/css/tailwind.src.css` (diretivas `@tailwind base/components/utilities`). `tailwind.config.js` escaneia `./index.html` **e** `./assets/js/**/*.js` — os templates Vue ficam como string dentro dos `.js` (`template: \`...\``), então o scanner de conteúdo do Tailwind precisa cobrir esses arquivos, não só o HTML.
-- Gerado: `assets/css/tailwind.css` (minificado, via `npm run build:css`) — **não commitado** (`.gitignore`), gerado no CI a cada deploy (`.github/workflows/deploy.yml`, step "Build do CSS (Tailwind)").
+- Gerado: `assets/css/tailwind.css` (minificado, via `npm run build:css`) — **não commitado** (`.gitignore`), gerado no CI a cada deploy pelo workflow do Azure Static Web Apps (comando de build customizado `npm run build:css`).
 - **Rodar localmente**: `npm run build:css` antes de servir os arquivos estáticos, ou `npm run watch:css` em paralelo durante desenvolvimento (o CSS não fica mais disponível "de graça" via CDN).
 - Ordem de carregamento em `index.html`: `tailwind.css` antes de `style.css` (customizações do projeto podem sobrescrever utilitários do Tailwind por cascata).
 - Risco conhecido: o scanner de conteúdo do Tailwind não detecta classes montadas dinamicamente via concatenação de string em runtime (ex: `'bg-' + cor + '-500'`) — verificado nesta migração que o projeto não usa esse padrão (só bindings de `:style` com `corHex`/`cor_hex`, não classes Tailwind dinâmicas).
