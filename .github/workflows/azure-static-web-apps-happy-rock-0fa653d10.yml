@@ -19,15 +19,6 @@ jobs:
         with:
           submodules: true
           lfs: false
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-      - name: Instalar dependências
-        run: npm ci
-      - name: Build (CSS do Tailwind + monta dist/ só com o que é público)
-        run: npm run build
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -39,8 +30,12 @@ jobs:
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "/" # App source code path
           api_location: "" # Api source code path - optional
-          output_location: "dist" # só o conteúdo curado por scripts/build-site.mjs vai público
-          skip_app_build: true # já buildamos manualmente acima (Oryx só reconhece "npm run build" sozinho, e além disso empacotaria a raiz inteira do repo, expondo node_modules/docs/testes/etc — por isso o output_location aponta pra dist/)
+          output_location: "dist" # só o conteúdo curado por scripts/build-site.mjs (rodado pelo Oryx via "npm run build") vai público
+          # skip_app_build removido: com skip_app_build=true, a action parece empacotar
+          # app_location inteiro (a raiz do repo) em vez de respeitar output_location — foi
+          # o que causou node_modules/docs/e2e/package.json etc. ficarem públicos na primeira
+          # tentativa. Deixando o Oryx rodar (ele já detecta e roda "npm run build" sozinho,
+          # já que agora existe esse script no package.json) ele empacota só output_location.
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:

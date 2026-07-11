@@ -13,11 +13,13 @@
     "build": "node scripts/build-site.mjs",
     "test:e2e": "playwright test"
   },
+  "dependencies": {
+    "tailwindcss": "^3.4.19"
+  },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^29.1.1",
-    "tailwindcss": "^3.4.19",
     "vitest": "^4.1.10"
   }
 }
