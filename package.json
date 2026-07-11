@@ -10,6 +10,7 @@
     "test:coverage": "vitest run --coverage",
     "build:css": "tailwindcss -i ./assets/css/tailwind.src.css -o ./assets/css/tailwind.css --minify",
     "watch:css": "tailwindcss -i ./assets/css/tailwind.src.css -o ./assets/css/tailwind.css --watch",
+    "build": "node scripts/build-site.mjs",
     "test:e2e": "playwright test"
   },
   "devDependencies": {
