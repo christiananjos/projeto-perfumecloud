@@ -1,3 +1,5 @@
+import { apiPost } from "../api.js";
+
 const AnaliseView = {
   template: `
     <div class="animate-fade-in flex flex-col mx-auto w-full md:max-w-4xl space-y-6 pt-2 px-4 pb-10 text-left">
@@ -55,22 +57,6 @@ const AnaliseView = {
                 </div>
             </div>
 
-            <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl">
-                <h3 class="font-black italic text-sm tracking-widest uppercase mb-4 border-b border-white/10 pb-4">Performance Log</h3>
-                <div class="grid grid-cols-2 gap-4 text-[10px] font-bold uppercase tracking-widest">
-                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
-                        <p class="text-gray-500 mb-1">Vendas Totais</p>
-                        <p class="text-lg text-blue-400">{{ vendas }}</p>
-                    </div>
-                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
-                        <p class="text-gray-500 mb-1">Desc. Rica</p>
-                        <p class="text-lg" :class="hasEnhanced ? 'text-emerald-400' : 'text-red-400'">
-                            {{ hasEnhanced ? 'SIM' : 'NÃO' }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
             <div class="bg-slate-50 rounded-[2.5rem] p-6 border border-gray-200">
                 <div class="flex items-center justify-between mb-4">
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Retorno Bruto do Mercado Livre (JSON)</p>
@@ -91,8 +77,6 @@ const AnaliseView = {
       medalha: "",
       alertas: {},
       temAlertas: false,
-      vendas: 0,
-      hasEnhanced: false,
       rawJSON: null,
     };
   },
@@ -120,23 +104,15 @@ const AnaliseView = {
       this.carregando = true;
       this.resultado = false;
       try {
-        const { data, error } = await window.supabase.functions.invoke(
-          "analisar-anuncio",
-          {
-            body: { url: this.urlAnuncio },
-          },
-        );
-
-        if (error || !data?.success) {
-          throw new Error(data?.error || error?.message || "Falha ao analisar o anúncio.");
-        }
+        const data = await apiPost("/api/analise-anuncio", { url: this.urlAnuncio });
 
         this.rawJSON = data; // Armazena o retorno para exibir no pre
-        this.reputacao = data.reputation_level.replace("_", " ");
-        this.medalha = data.power_seller_status;
-        this.alertas = data.alertas_criticos || {};
-        this.vendas = data.sold_quantity;
-        this.hasEnhanced = data.has_full_enhanced_descriptions;
+        this.reputacao = data.reputationLevel.replace("_", " ");
+        this.medalha = data.powerSellerStatus;
+        this.alertas = {
+          is_cbt: data.erros?.isCbtFulfillmentCn ?? false,
+          out_of_coverage: data.erros?.isOutOfCoverage ?? false,
+        };
         this.temAlertas = Object.values(this.alertas).some((v) => v === true);
 
         this.resultado = true;

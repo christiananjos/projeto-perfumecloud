@@ -1,14 +1,15 @@
 # PerfumeCloud Pro — Frontend
 
 ## Visão geral
-SPA de gestão de vendas/estoque/precificação de perfumes (canais Mercado Livre e Shopee). Construído com **Vue 3 via CDN**, **Tailwind CSS (CDN)**, Chart.js e Font Awesome — **sem etapa de build, sem `package.json`** até a introdução dos testes (ver `docs/arquitetura-frontend.md`). Serve arquivos estáticos direto; consome a API do backend .NET (`PerfumeCloudPro.Api`, repositório separado em `c:\Projetos\backend`).
+SPA de gestão de vendas/estoque/precificação de perfumes (canais Mercado Livre e Shopee). Construído com **Vue 3 via CDN** (sem bundler para JS — ES modules direto no navegador) e **Tailwind CSS via CLI** (CSS gerado no CI a cada deploy, ver `docs/arquitetura-frontend.md`). Consome a API do backend .NET (`PerfumeCloudPro.Api`, repositório separado em `c:\Projetos\backend`) para **todas** as funções — o frontend não depende mais de Supabase (removido nesta base).
 
 A arquitetura já está em uso neste projeto e está documentada em `docs/arquitetura-frontend.md`. A skill `vue-scaffolding` deve ler esse arquivo diretamente ao criar novos componentes.
 
 ## Comandos úteis
-- Servir localmente: `python -m http.server 8000` ou `npx serve` (não há build).
-- `supabase start` — inicia Postgres + API local para as Edge Functions.
-- `npm test` — testes unitários (Vitest), rodam à parte do deploy estático (ver `docs/arquitetura-frontend.md`).
+- `npm run build:css` — gera o CSS do Tailwind (necessário antes de servir localmente, já que não há mais CDN do Tailwind).
+- Servir localmente: `npx serve -l 3000` (ou `python -m http.server 3000`) — **use a porta 3000** (ou 5173/5500), o CORS do backend não libera a porta 8000.
+- `npm test` — testes unitários (Vitest).
+- `npm run test:e2e` — testes e2e (Playwright) contra o backend real; exige backend rodando e credenciais de teste em variáveis de ambiente (ver `docs/arquitetura-frontend.md`).
 
 ## Convenções
 - Um componente por tela em `assets/js/components/`, registrado em `assets/js/app.js`.

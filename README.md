@@ -8,9 +8,8 @@ Sistema web para gerenciamento de estoque, vendas e precificação de perfumes n
 
 | Camada         | Tecnologia                                                |
 | -------------- | --------------------------------------------------------- |
-| Frontend       | Vue 3 (CDN), Tailwind CSS (CDN), Chart.js, Font Awesome 6 |
+| Frontend       | Vue 3 (CDN), Tailwind CSS (build via CLI), Chart.js, Font Awesome 6 |
 | Backend        | Azure Web Services (API REST)                             |
-| Edge Functions | Supabase + Deno (scraper de anúncios ML)                  |
 | Autenticação   | JWT armazenado em localStorage                            |
 
 ---
@@ -39,12 +38,6 @@ window.API_URL =
   "https://marketplacemanagement-hzhygwdfaxfnbnga.brazilsouth-01.azurewebsites.net";
 ```
 
-### Supabase local (Edge Functions)
-
-```bash
-supabase start   # inicia PostgreSQL + API local
-```
-
 ---
 
 ## Estrutura de arquivos
@@ -66,8 +59,6 @@ projeto-perfumecloud/
 │           ├── Configuracoes.js
 │           ├── AnaliseView.js
 │           └── EstrategiaAds.js
-└── supabase/
-    └── functions/analisar-anuncio/   # Edge Function Deno
 ```
 
 ---
@@ -92,7 +83,7 @@ CRUD de produtos com cálculo automático de preço sugerido para ML e Shopee. T
 
 ### Scanner ML (`AnaliseView`)
 
-Analisa anúncios do Mercado Livre via URL. Detecta: produto CBT (China), fora de cobertura de entrega, reputação do vendedor e status Mercado Líder. Usa Supabase Edge Function.
+Analisa anúncios do Mercado Livre via URL. Detecta: produto CBT (China), fora de cobertura de entrega, reputação do vendedor e status Mercado Líder. Consome o endpoint `POST /api/analise-anuncio` do backend .NET.
 
 ### Estratégia Ads (`EstrategiaAds`)
 
@@ -162,3 +153,4 @@ Login com **usuário + senha** (sem e-mail). O frontend converte internamente pa
 | PATCH      | `/api/configuracoes/ml/aplicar-em-todos` | Aplicar taxas em massa   |
 | GET/POST   | `/api/canais`                            | Listar / criar canal     |
 | PATCH      | `/api/canais/:id/desativar`              | Desativar canal          |
+| POST       | `/api/analise-anuncio`                   | Scanner de anúncio ML    |
