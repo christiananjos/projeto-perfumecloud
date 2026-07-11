@@ -1,4 +1,4 @@
-import { loginApi, persistAuth } from "../api.js";
+import { loginApi, persistAuth, normalizeRole } from "../api.js";
 
 const LoginView = {
   template: `
@@ -81,7 +81,7 @@ const LoginView = {
 
         const session = persistAuth(apiData.token) || {
           email: apiData.email || emailFake,
-          role: "Admin",
+          role: normalizeRole(apiData.role),
           token: apiData.token,
         };
 

@@ -7,10 +7,23 @@
     <title>PerfumeCloud Pro</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☁️</text></svg>">
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/vue@3.4.38/dist/vue.global.js"
+        integrity="sha384-WRCkrPcTVlHVnve6RlPL8tCU8PqAUXcxyIMIjpddtL45o+jJTBmFX2SJw88IOVo1"
+        crossorigin="anonymous"></script>
+    <!-- cdn.tailwindcss.com é o Play CDN: compila Tailwind no navegador a partir das classes da
+         página (não é um arquivo estático fixo) e não envia cabeçalho Access-Control-Allow-Origin
+         — por isso não é possível aplicar Subresource Integrity aqui (crossorigin="anonymous"
+         bloquearia o carregamento por CORS, verificado nesta auditoria). Versão fixada em vez de
+         apontar para o "latest" implícito, mas o risco de supply-chain deste CDN específico
+         permanece — a própria Tailwind não recomenda este Play CDN para produção. Ver
+         docs/arquitetura-frontend.md. -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"
+        integrity="sha384-G436+Z2nlA8+PNoeRvWdxKbvOf8E/y+lYxqht2iBwNHTQDV5CJr3+AGVj8fGZi5t"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0"
+        crossorigin="anonymous">
     <link rel="stylesheet" href="./assets/css/style.css">
 </head>
 

@@ -53,7 +53,7 @@ function buildSessionFromToken(token) {
     const claims = JSON.parse(decodeBase64Url(payload));
     return {
       email: claims.email || claims[EMAIL_CLAIM] || "",
-      role: normalizeRole(claims.role || claims[ROLE_CLAIM] || "admin"),
+      role: normalizeRole(claims.role || claims[ROLE_CLAIM]),
       exp: claims.exp || null,
       token,
     };

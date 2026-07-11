@@ -24,6 +24,15 @@ SPA em **Vue 3 (Options API)**, carregado via `<script>` de CDN (`unpkg.com/vue@
 
 Antes desta auditoria, o projeto não tinha `package.json` nem nenhum teste. Foi introduzido **Vitest** rodando à parte do deploy (não adiciona bundler nem etapa de build ao `index.html`/produção — ver `package.json` na raiz). Cobertura inicial: funções puras extraídas de `assets/js/api.js` (normalização de papel, decodificação de sessão a partir do JWT, normalização de texto/mojibake).
 
+## Achados de segurança e recomendações (auditoria 2026-07)
+
+- **SSRF na Edge Function `analisar-anuncio`** — aceitava qualquer `url` do cliente e fazia `fetch` no servidor sem validar domínio (`verify_jwt=true` não protege, pois a anon key é pública). Corrigido: `isAllowedUrl()` restringe a domínios do Mercado Livre (`mercadolivre.com.br` e subdomínios) e exige HTTPS antes de qualquer fetch.
+- **Fallback de papel inseguro** — `api.js` (`buildSessionFromToken`) e `Login.js` tratavam a ausência do claim `role` no JWT como `"admin"`, dando privilégio máximo por padrão. Corrigido para usar o fallback já seguro de `normalizeRole` (`"vendedor"`).
+- **CDNs sem versão fixa nem SRI** — Vue, Chart.js e Font Awesome agora carregam de versão fixa (`vue@3.4.38`, `chart.js@4.4.4`, `font-awesome@6.4.0` já estava fixo) com `integrity`+`crossorigin`. **Tailwind (`cdn.tailwindcss.com`) não pôde receber SRI**: verificado nesta auditoria que o CDN não envia `Access-Control-Allow-Origin`, então `crossorigin="anonymous"` bloqueia o carregamento por CORS (confirmado com Playwright — a página ficava sem estilo). Mantido só com versão fixada (`/3.4.17`); o próprio Tailwind avisa no console que este CDN não é recomendado para produção — migrar para Tailwind CLI/PostCSS resolveria isso de vez, mas é uma mudança maior (introduz build step), fora do escopo desta auditoria.
+- **RBAC client-side (`isAdmin`) é só UI** — ver seção "Autenticação e autorização" acima. Validado e corrigido no backend nesta mesma auditoria.
+- **Historico.js**: botão de editar venda não tinha nenhum gate de `isAdmin` (nem visual) — qualquer usuário logado via UI conseguia abrir a edição. Corrigido na revisão de código (ver commit de code review).
+- JWT em `localStorage` — aceito como trade-off do projeto (SPA sem cookie httpOnly); mitigação é nunca introduzir `v-html` com dado não confiável (ver skill `vue-security-audit`).
+
 ## Convenção para novas features
 
 - Um componente por tela, registrado em `assets/js/app.js`, adicionado ao array `menu` se navegável.

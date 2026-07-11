@@ -5,11 +5,40 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Domínios permitidos para o proxy de scraping — evita SSRF (a function não deve buscar
+// URL arbitrária vinda do cliente; só anúncios do Mercado Livre, que é o único uso legítimo).
+const ALLOWED_HOSTS = [
+  'mercadolivre.com.br',
+  'produto.mercadolivre.com.br',
+  'www.mercadolivre.com.br',
+  'articulo.mercadolivre.com.br',
+]
+
+function isAllowedUrl(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl)
+    if (parsed.protocol !== 'https:') return false
+    return ALLOWED_HOSTS.some(
+      (host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`),
+    )
+  } catch {
+    return false
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
     const { url } = await req.json()
+
+    if (!isAllowedUrl(url)) {
+      return new Response(
+        JSON.stringify({ error: 'URL não permitida. Só anúncios do Mercado Livre são aceitos.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
