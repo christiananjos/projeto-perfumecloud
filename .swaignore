@@ -1,0 +1,22 @@
+# Nunca publicar isso no site estático (Azure Static Web Apps)
+.git/
+.github/
+.vscode/
+node_modules/
+e2e/
+test-results/
+playwright-report/
+playwright/
+docs/
+changes/
+.claude/
+supabase/
+*.test.js
+tailwind.src.css
+tailwind.config.js
+vitest.config.js
+playwright.config.js
+package.json
+package-lock.json
+README.md
+CLAUDE.md
