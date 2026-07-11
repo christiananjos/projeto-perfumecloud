@@ -22,7 +22,11 @@ SPA em **Vue 3 (Options API)**, carregado via `<script>` de CDN (`unpkg.com/vue@
 
 ## Testes (baseline inicial, 2026-07)
 
-Antes desta auditoria, o projeto não tinha `package.json` nem nenhum teste. Foi introduzido **Vitest** rodando à parte do deploy (não adiciona bundler nem etapa de build ao `index.html`/produção — ver `package.json` na raiz). Cobertura inicial: funções puras extraídas de `assets/js/api.js` (normalização de papel, decodificação de sessão a partir do JWT, normalização de texto/mojibake).
+Antes desta auditoria, o projeto não tinha `package.json` nem nenhum teste. Foi introduzido **Vitest** rodando à parte do deploy (não adiciona bundler nem etapa de build ao `index.html`/produção — ver `package.json` na raiz, cuja única finalidade é rodar os testes). Rodar com `npm test` (ou `npm run test:coverage` para relatório de cobertura).
+
+- `assets/js/venda-utils.test.js` — 100% de cobertura em `canalLabel`, `precoSugeridoPorCanal`, `custoProduto`, `calcularLucroVenda` (inclui teste de regressão do número mágico `canalId === 2` removido na revisão de código).
+- `assets/js/api.test.js` — `normalizeRole`, `normalizeText` (correção de mojibake) e `buildSessionFromToken`, incluindo teste de regressão do fallback de papel inseguro (`"vendedor"` em vez de `"admin"` quando o JWT não tem claim de papel).
+- **Não testado por escolha**: os wrappers HTTP (`apiGet`/`apiPost`/.../`loginApi`) — são finos o suficiente (delegam a `fetch`) que testá-los exigiria mockar rede sem validar lógica de negócio real; ficam para uma eventual suíte de integração/e2e contra um backend real ou mockado.
 
 ## Achados de segurança e recomendações (auditoria 2026-07)
 

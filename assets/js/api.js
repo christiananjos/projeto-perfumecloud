@@ -45,7 +45,7 @@ function decodeBase64Url(value) {
   return atob(padded);
 }
 
-function buildSessionFromToken(token) {
+export function buildSessionFromToken(token) {
   try {
     const [, payload] = token.split(".");
     if (!payload) return null;
@@ -62,7 +62,7 @@ function buildSessionFromToken(token) {
   }
 }
 
-function normalizeText(value) {
+export function normalizeText(value) {
   if (typeof value !== "string") return value;
 
   let normalized = value;
