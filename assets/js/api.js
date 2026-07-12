@@ -1,5 +1,5 @@
 const DEFAULT_API_URL =
-  "https://marketplacemanagement-hzhygwdfaxfnbnga.brazilsouth-01.azurewebsites.net";
+  "https://perfumecloud-api-h6hxf9g9afdah9g2.canadacentral-01.azurewebsites.net";
 const API_URL = (window.API_URL || DEFAULT_API_URL).replace(/\/$/, "");
 const AUTH_TOKEN_KEY = "apiToken";
 const AUTH_SESSION_KEY = "apiSession";
